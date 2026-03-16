@@ -8,12 +8,11 @@ import {
   query,
   where,
   orderBy,
-
 } from 'firebase/firestore';
 import { db } from './firebase';
-import type { Match, MatchStatus, MatchOdds } from '../types';
+import type { Match, MatchStatus, MatchOdds, Sport, WorldCupStage } from '../types';
 
-// ─── Créer / importer un match (depuis l'API-Football) ───
+// ─── Créer / importer un match (depuis les APIs) ───
 export async function upsertMatch(data: {
   apiMatchId: number;
   sport: string;
@@ -25,12 +24,17 @@ export async function upsertMatch(data: {
   status?: MatchStatus;
   homeScore?: number | null;
   awayScore?: number | null;
+  homeLogo?: string;
+  awayLogo?: string;
+  apiSource?: 'api-football' | 'espn' | 'balldontlie';
+  isWorldCup?: boolean;
+  worldCupGroup?: string;
+  worldCupStage?: WorldCupStage;
 }): Promise<string> {
-  // Utiliser apiMatchId comme ID doc pour éviter les doublons
   const docId = `api_${data.apiMatchId}`;
   const matchRef = doc(db, 'matches', docId);
 
-  const matchData: Omit<Match, 'id'> = {
+  const matchData: Record<string, unknown> = {
     sport: data.sport,
     league: data.league,
     homeTeam: data.homeTeam,
@@ -42,6 +46,14 @@ export async function upsertMatch(data: {
     apiMatchId: data.apiMatchId,
     odds: data.odds,
   };
+
+  // Champs optionnels
+  if (data.homeLogo) matchData.homeLogo = data.homeLogo;
+  if (data.awayLogo) matchData.awayLogo = data.awayLogo;
+  if (data.apiSource) matchData.apiSource = data.apiSource;
+  if (data.isWorldCup) matchData.isWorldCup = true;
+  if (data.worldCupGroup) matchData.worldCupGroup = data.worldCupGroup;
+  if (data.worldCupStage) matchData.worldCupStage = data.worldCupStage;
 
   await setDoc(matchRef, matchData, { merge: true });
   return docId;
@@ -80,6 +92,18 @@ export async function getUpcomingMatches(league?: string): Promise<Match[]> {
   return snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Match));
 }
 
+// ─── Matchs par sport ───
+export async function getMatchesBySport(sport: Sport): Promise<Match[]> {
+  const q = query(
+    collection(db, 'matches'),
+    where('sport', '==', sport),
+    where('status', 'in', ['upcoming', 'live']),
+    orderBy('startTime', 'asc')
+  );
+  const snapshot = await getDocs(q);
+  return snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Match));
+}
+
 // ─── Matchs en live ───
 export async function getLiveMatches(): Promise<Match[]> {
   const q = query(
@@ -109,8 +133,18 @@ export async function getFinishedMatches(league?: string, limitCount: number = 2
     );
   }
   const snapshot = await getDocs(q);
-  // Limit côté client (Firestore v9 web n'a pas de limit dans query composite facilement)
   return snapshot.docs.slice(0, limitCount).map(d => ({ id: d.id, ...d.data() } as Match));
+}
+
+// ─── Matchs Coupe du Monde ───
+export async function getWorldCupMatches(): Promise<Match[]> {
+  const q = query(
+    collection(db, 'matches'),
+    where('isWorldCup', '==', true),
+    orderBy('startTime', 'asc')
+  );
+  const snapshot = await getDocs(q);
+  return snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Match));
 }
 
 // ─── Mettre à jour le score / statut d'un match ───

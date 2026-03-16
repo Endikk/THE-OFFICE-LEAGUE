@@ -2,23 +2,56 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ─── Base ─── */
 @layer base {
   body {
     margin: 0;
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    font-family: 'DM Sans', 'Inter', system-ui, -apple-system, sans-serif;
     background-color: #f5f0e8;
-    color: #1a3a5c;
+    color: #2c2416;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Paper texture background on body */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    background-image:
+      url("data:image/svg+xml,%3Csvg width='200' height='200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E"),
+      radial-gradient(ellipse at 85% 12%, rgba(139, 90, 43, 0.035) 0%, transparent 50%),
+      radial-gradient(ellipse at 8% 75%, rgba(139, 90, 43, 0.025) 0%, transparent 40%),
+      radial-gradient(ellipse at 50% 50%, rgba(139, 90, 43, 0.015) 0%, transparent 60%);
+  }
+
+  #root {
+    position: relative;
+    z-index: 1;
   }
 
   ::selection {
     background-color: #c9a227;
     color: white;
   }
+
+  /* Headings use Playfair Display */
+  h1, h2, h3 {
+    font-family: 'Playfair Display', Georgia, serif;
+  }
+
+  /* Monospace for data/numbers */
+  .font-mono,
+  [class*="font-mono"] {
+    font-family: 'Courier Prime', 'Courier New', monospace;
+  }
 }
 
+/* ─── Components ─── */
 @layer components {
+  /* ─── Buttons ─── */
   .btn-primary {
     @apply bg-office-navy text-white py-3 px-6 rounded-lg font-semibold
            hover:bg-office-navy-light active:bg-office-navy-dark
@@ -37,18 +70,40 @@
            transition-all duration-150;
   }
 
-  .input-field {
-    @apply w-full px-4 py-3 bg-white border-2 border-office-paper-dark rounded-lg
-           text-office-navy placeholder:text-office-brown/40
-           focus:border-office-navy focus:ring-2 focus:ring-office-navy/10
-           outline-none transition-all duration-150;
+  .btn-ghost {
+    @apply text-office-brown-light hover:text-office-navy hover:bg-office-paper-dark/50
+           py-2 px-4 rounded-lg font-medium transition-all duration-150;
   }
 
+  /* ─── Input ─── */
+  .input-field {
+    @apply w-full px-4 py-3 bg-white border-2 border-office-paper-dark rounded-lg
+           text-office-brown placeholder:text-office-brown-light/40
+           focus:border-office-navy focus:ring-2 focus:ring-office-navy/10
+           outline-none transition-all duration-150 font-sans;
+  }
+
+  /* ─── Cards ─── */
   .card {
     @apply bg-white rounded-xl shadow-card border border-office-paper-dark/60
            hover:shadow-card-hover transition-shadow duration-200;
   }
 
+  /* Card with colored left border */
+  .card-accent-navy {
+    @apply card border-l-4 border-l-office-navy;
+  }
+  .card-accent-mustard {
+    @apply card border-l-4 border-l-office-mustard;
+  }
+  .card-accent-red {
+    @apply card border-l-4 border-l-office-red;
+  }
+  .card-accent-green {
+    @apply card border-l-4 border-l-office-green;
+  }
+
+  /* ─── Status boxes ─── */
   .error-box {
     @apply bg-office-red/10 border border-office-red/30 text-office-red
            px-4 py-3 rounded-lg text-sm font-medium;
@@ -58,4 +113,157 @@
     @apply bg-office-green/10 border border-office-green/30 text-office-green
            px-4 py-3 rounded-lg text-sm font-medium;
   }
+
+  /* ─── Sticky Note (Post-it) ─── */
+  .sticky-note {
+    background-color: #fff9a8;
+    border-radius: 2px;
+    box-shadow: 2px 3px 8px rgba(0, 0, 0, 0.1), 1px 1px 3px rgba(0, 0, 0, 0.06);
+    padding: 1rem 1.25rem;
+    position: relative;
+    font-family: 'Courier Prime', 'Courier New', monospace;
+    line-height: 1.5;
+  }
+
+  .sticky-note::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(
+      to right,
+      rgba(0, 0, 0, 0.02),
+      rgba(0, 0, 0, 0.05),
+      rgba(0, 0, 0, 0.02)
+    );
+  }
+
+  /* ─── Badge ─── */
+  .badge {
+    @apply inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full;
+  }
+  .badge-live {
+    @apply badge bg-office-red/10 text-office-red;
+  }
+  .badge-upcoming {
+    @apply badge bg-office-navy/10 text-office-navy;
+  }
+  .badge-finished {
+    @apply badge bg-office-brown-light/10 text-office-brown-light;
+  }
+  .badge-won {
+    @apply badge bg-office-green/10 text-office-green;
+  }
+  .badge-lost {
+    @apply badge bg-office-red/10 text-office-red;
+  }
+
+  /* ─── Section heading ─── */
+  .section-heading {
+    @apply font-heading text-xl font-bold text-office-navy;
+  }
+
+  /* ─── Data display ─── */
+  .data-value {
+    @apply font-mono text-lg font-bold;
+  }
+  .data-label {
+    @apply text-xs text-office-brown-light/60 font-medium uppercase tracking-wide;
+  }
+}
+
+/* ─── Animations ─── */
+
+/* Slide-up stagger for lists */
+.animate-slide-up {
+  animation: slideUp 0.4s ease-out both;
+}
+
+.animate-slide-up-delay-1 { animation-delay: 50ms; }
+.animate-slide-up-delay-2 { animation-delay: 100ms; }
+.animate-slide-up-delay-3 { animation-delay: 150ms; }
+.animate-slide-up-delay-4 { animation-delay: 200ms; }
+.animate-slide-up-delay-5 { animation-delay: 250ms; }
+
+@keyframes slideUp {
+  0% {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.animate-slide-in {
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* Live pulse dot */
+.live-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #b8342e;
+  animation: pulseLive 2s ease-in-out infinite;
+}
+
+@keyframes pulseLive {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(0.85); }
+}
+
+/* Quote banner ticker */
+.quote-ticker {
+  display: flex;
+  white-space: nowrap;
+  animation: quoteScroll 30s linear infinite;
+}
+
+.quote-ticker:hover {
+  animation-play-state: paused;
+}
+
+@keyframes quoteScroll {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+/* ─── Scrollbar ─── */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* ─── Custom scrollbar for main content ─── */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #f5f0e8;
+}
+::-webkit-scrollbar-thumb {
+  background: #e8d9b0;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #c9a227;
 }

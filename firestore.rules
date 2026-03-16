@@ -9,8 +9,6 @@ service cloud.firestore {
     function isOwner(userId) {
       return isAuth() && request.auth.uid == userId;
     }
-    // Vérifie que l'utilisateur appartient à l'office donné
-    // en lisant le document user pour comparer officeId
     function belongsToOffice(officeId) {
       return isAuth()
         && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.officeId == officeId;
@@ -18,9 +16,7 @@ service cloud.firestore {
 
     // ─── USERS ───
     match /users/{userId} {
-      // Tout user auth peut lire les profils (pour leaderboard, etc.)
       allow read: if isAuth();
-      // Seul le propriétaire peut créer/modifier son propre doc
       allow create: if isOwner(userId);
       allow update: if isOwner(userId);
       allow delete: if false;
@@ -28,76 +24,91 @@ service cloud.firestore {
 
     // ─── OFFICES ───
     match /offices/{officeId} {
-      // Seuls les membres de cet office peuvent le lire
       allow read: if belongsToOffice(officeId);
-      // Tout user auth peut créer un office
       allow create: if isAuth()
         && request.resource.data.createdBy == request.auth.uid
         && request.resource.data.membersCount == 1;
-      // Seul un membre peut modifier (ex: membersCount sur join)
       allow update: if belongsToOffice(officeId);
       allow delete: if false;
     }
 
     // ─── MATCHES ───
     match /matches/{matchId} {
-      // Tout user auth peut lire les matchs
       allow read: if isAuth();
-      // Écriture réservée au backend / admin SDK
-      allow write: if false;
+      // Écriture client pour mise à jour des scores en temps réel
+      allow create: if false;
+      allow update: if isAuth();
+      allow delete: if false;
     }
 
     // ─── BETS ───
     match /bets/{betId} {
-      // Un user ne peut lire que les paris de son office
       allow read: if isAuth()
         && belongsToOffice(resource.data.officeId);
-      // Créer un pari : user auth, c'est son userId, et il appartient à l'office
       allow create: if isAuth()
         && request.resource.data.userId == request.auth.uid
         && belongsToOffice(request.resource.data.officeId)
         && request.resource.data.status == 'pending'
         && request.resource.data.amount > 0;
-      // Mise à jour (résolution) réservée au backend
-      allow update: if false;
-      allow delete: if false;
-    }
-
-    // ─── POLLS ───
-    match /polls/{pollId} {
-      // Lecture : membre de l'office
-      allow read: if isAuth()
-        && belongsToOffice(resource.data.officeId);
-      // Création : membre de l'office
-      allow create: if isAuth()
-        && request.resource.data.createdBy == request.auth.uid
-        && belongsToOffice(request.resource.data.officeId);
-      // Update : membre de l'office (pour voter)
+      // Résolution client : seul un membre de l'office peut résoudre
       allow update: if isAuth()
         && belongsToOffice(resource.data.officeId);
       allow delete: if false;
     }
 
-    // ─── LEADERBOARD (subcollection) ───
-    // Path: leaderboard/{officeId}/rankings/{userId}
+    // ─── POLLS ───
+    match /polls/{pollId} {
+      allow read: if isAuth()
+        && belongsToOffice(resource.data.officeId);
+      allow create: if isAuth()
+        && request.resource.data.createdBy == request.auth.uid
+        && belongsToOffice(request.resource.data.officeId);
+      allow update: if isAuth()
+        && belongsToOffice(resource.data.officeId);
+      allow delete: if false;
+    }
+
+    // ─── LEADERBOARD ───
     match /leaderboard/{officeId} {
       allow read: if belongsToOffice(officeId);
-      allow write: if false; // géré par le backend
+      allow write: if false;
 
       match /rankings/{userId} {
         allow read: if belongsToOffice(officeId);
-        // Écriture réservée au backend
-        allow write: if false;
+        // Membres de l'office peuvent mettre à jour le leaderboard
+        allow write: if belongsToOffice(officeId);
       }
     }
 
     // ─── DUNDIE AWARDS ───
     match /dundieAwards/{awardId} {
-      // Lecture : membre de l'office du award
       allow read: if isAuth()
         && belongsToOffice(resource.data.officeId);
-      // Écriture réservée au backend
-      allow write: if false;
+      // Membres de l'office peuvent créer des awards (auto-attribués)
+      allow create: if isAuth()
+        && belongsToOffice(request.resource.data.officeId);
+      allow update: if isAuth()
+        && belongsToOffice(resource.data.officeId);
+      allow delete: if false;
+    }
+
+    // ─── NOTIFICATIONS ───
+    match /notifications/{notifId} {
+      // Un user ne peut lire que ses propres notifications
+      allow read: if isAuth()
+        && resource.data.userId == request.auth.uid;
+      // Tout user auth peut créer une notification (pour notifier d'autres membres)
+      allow create: if isAuth();
+      // Seul le destinataire peut marquer comme lu
+      allow update: if isAuth()
+        && resource.data.userId == request.auth.uid;
+      allow delete: if false;
+    }
+
+    // ─── API CACHE (pour stocker les résultats API-Football) ───
+    match /apiCache/{cacheId} {
+      allow read: if isAuth();
+      allow write: if isAuth();
     }
   }
 }
