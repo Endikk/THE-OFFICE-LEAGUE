@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { X, Plus, Trash2, Clock, Sparkles } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { createPoll, POLL_TEMPLATES, type PollTemplate } from '../../services/polls';
+import { notifyNewPoll } from '../../services/notifications';
+import { getOfficeMembers } from '../../services/office';
 import type { PollCategory } from '../../types';
 
 interface CreatePollModalProps {
@@ -75,7 +77,7 @@ export default function CreatePollModal({ onClose, onCreated }: CreatePollModalP
     setLoading(true);
     setError('');
     try {
-      await createPoll({
+      const pollId = await createPoll({
         officeId: userData!.officeId!,
         createdBy: userData!.uid,
         question: question.trim(),
@@ -84,6 +86,18 @@ export default function CreatePollModal({ onClose, onCreated }: CreatePollModalP
         emoji,
         closesInHours: duration,
       });
+
+      // Notify office members about new poll
+      getOfficeMembers(userData!.officeId!).then(members => {
+        notifyNewPoll(
+          userData!.officeId!,
+          members.map(m => m.uid),
+          question.trim(),
+          userData!.uid,
+          pollId
+        );
+      }).catch(() => {});
+
       onCreated();
       onClose();
     } catch (err) {

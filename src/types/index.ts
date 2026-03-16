@@ -227,3 +227,27 @@ export interface WorldCupSpecialBet {
   gainedPoints: number;
   createdAt: FirestoreDate;
 }
+
+// ============ NOTIFICATIONS ============
+export type AppNotifType =
+  | 'match_reminder'    // match commence dans 30 min
+  | 'bet_won'           // pari gagné
+  | 'bet_lost'          // pari perdu
+  | 'poll_created'      // nouveau sondage
+  | 'leaderboard_pass'  // quelqu'un te dépasse
+  | 'dundie_awarded'    // tu reçois un dundie
+  | 'match_live'        // un match est en direct
+  | 'match_finished';   // un match est terminé
+
+export interface AppNotification {
+  id: string;
+  userId: string;
+  officeId: string;
+  type: AppNotifType;
+  emoji: string;
+  title: string;
+  message: string;
+  read: boolean;
+  data?: Record<string, string>;  // matchId, pollId, etc.
+  createdAt: FirestoreDate;
+}

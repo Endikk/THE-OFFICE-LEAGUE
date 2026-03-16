@@ -13,6 +13,7 @@ import {
 } from 'firebase/firestore';
 import { db } from './firebase';
 import type { DundieAward, DundieType, RankingEntry, User } from '../types';
+import { notifyDundieAwarded } from './notifications';
 
 // ─── Créer un Dundie Award ───
 export async function createDundieAward(data: {
@@ -322,6 +323,9 @@ export async function awardPeriodicDundies(
       period: dundie.period,
     });
 
+    // Notify the winner
+    notifyDundieAwarded(winner.userId, officeId, dundie.title, dundie.emoji).catch(() => {});
+
     newAwards.push({
       id,
       officeId,
@@ -363,6 +367,9 @@ export async function checkAndAwardDundies(
       winnerName: user.displayName,
       season,
     });
+
+    // Notify the winner
+    notifyDundieAwarded(user.uid, officeId, criteria.title, criteria.emoji).catch(() => {});
 
     newAwards.push({
       id,

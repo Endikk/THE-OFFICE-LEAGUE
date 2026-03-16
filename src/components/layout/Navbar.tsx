@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import QuoteBanner from '../common/QuoteBanner';
+import NotificationBell from '../notifications/NotificationBell';
 
 export default function Navbar() {
   const { userData, signOut } = useAuth();
@@ -85,6 +86,9 @@ export default function Navbar() {
                       {userData.officeCoins.toLocaleString()}
                     </span>
                   </div>
+
+                  {/* Notification bell */}
+                  <NotificationBell />
 
                   {/* User avatar */}
                   <div className="hidden md:flex items-center gap-2">

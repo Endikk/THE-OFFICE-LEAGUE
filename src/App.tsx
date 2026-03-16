@@ -6,7 +6,9 @@ import Navbar from './components/layout/Navbar';
 import ToastContainer from './components/common/ToastContainer';
 import Confetti from './components/common/Confetti';
 import { useNotifications } from './context/NotificationContext';
-import { useMatchListener } from './hooks/useMatchListener';
+import { useMatchListener, useMatchReminderListener } from './hooks/useMatchListener';
+import { useLeaderboardListener } from './hooks/useLeaderboardListener';
+import { useDundieListener } from './hooks/useDundieListener';
 
 // Pages publiques (auth)
 import LoginPage from './pages/LoginPage';
@@ -29,6 +31,9 @@ import WorldCupPage from './pages/WorldCupPage';
 // ─── Layout avec Navbar + listener de matchs ───
 function AppLayout({ children }: { children: React.ReactNode }) {
   useMatchListener();
+  useMatchReminderListener();
+  useLeaderboardListener();
+  useDundieListener();
   return (
     <div className="min-h-screen bg-office-paper">
       <Navbar />
