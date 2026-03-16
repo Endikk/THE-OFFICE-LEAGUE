@@ -2,8 +2,60 @@
 @tailwind components;
 @tailwind utilities;
 
-body {
-  margin: 0;
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
-  background-color: #f7fafc;
+@layer base {
+  body {
+    margin: 0;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    background-color: #f5f0e8;
+    color: #1a3a5c;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  ::selection {
+    background-color: #c9a227;
+    color: white;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-office-navy text-white py-3 px-6 rounded-lg font-semibold
+           hover:bg-office-navy-light active:bg-office-navy-dark
+           transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-mustard {
+    @apply bg-office-mustard text-white py-3 px-6 rounded-lg font-semibold
+           hover:bg-office-mustard-light active:bg-office-mustard-dark
+           transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-outline {
+    @apply border-2 border-office-navy/20 text-office-navy py-3 px-6 rounded-lg font-medium
+           hover:border-office-navy hover:bg-office-navy/5
+           transition-all duration-150;
+  }
+
+  .input-field {
+    @apply w-full px-4 py-3 bg-white border-2 border-office-paper-dark rounded-lg
+           text-office-navy placeholder:text-office-brown/40
+           focus:border-office-navy focus:ring-2 focus:ring-office-navy/10
+           outline-none transition-all duration-150;
+  }
+
+  .card {
+    @apply bg-white rounded-xl shadow-card border border-office-paper-dark/60
+           hover:shadow-card-hover transition-shadow duration-200;
+  }
+
+  .error-box {
+    @apply bg-office-red/10 border border-office-red/30 text-office-red
+           px-4 py-3 rounded-lg text-sm font-medium;
+  }
+
+  .success-box {
+    @apply bg-office-green/10 border border-office-green/30 text-office-green
+           px-4 py-3 rounded-lg text-sm font-medium;
+  }
 }

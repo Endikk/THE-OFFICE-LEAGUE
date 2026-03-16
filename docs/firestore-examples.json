@@ -1,0 +1,160 @@
+{
+  "___DOCUMENTATION___": "Exemples de documents pour chaque collection Firestore de THE OFFICE LEAGUE",
+
+  "users/uid_abc123": {
+    "uid": "uid_abc123",
+    "displayName": "Michael Scott",
+    "email": "michael@dundermifflin.com",
+    "photoURL": "https://example.com/michael.jpg",
+    "officeId": "office_001",
+    "officeCoins": 1250,
+    "totalWins": 12,
+    "totalLosses": 5,
+    "streak": 3,
+    "dundieAwards": ["award_001", "award_003"],
+    "createdAt": "2026-03-01T10:00:00Z"
+  },
+
+  "offices/office_001": {
+    "id": "office_001",
+    "name": "Dunder Mifflin Scranton",
+    "inviteCode": "X7K9M2",
+    "createdBy": "uid_abc123",
+    "membersCount": 8,
+    "createdAt": "2026-03-01T10:05:00Z"
+  },
+
+  "matches/match_001": {
+    "id": "match_001",
+    "sport": "football",
+    "league": "Ligue 1",
+    "homeTeam": "PSG",
+    "awayTeam": "Marseille",
+    "homeScore": null,
+    "awayScore": null,
+    "status": "upcoming",
+    "startTime": "2026-03-20T21:00:00Z",
+    "apiMatchId": 984521,
+    "odds": {
+      "home": 1.45,
+      "draw": 4.20,
+      "away": 6.50
+    }
+  },
+
+  "matches/match_002__finished": {
+    "id": "match_002",
+    "sport": "football",
+    "league": "Premier League",
+    "homeTeam": "Arsenal",
+    "awayTeam": "Chelsea",
+    "homeScore": 2,
+    "awayScore": 1,
+    "status": "finished",
+    "startTime": "2026-03-15T17:30:00Z",
+    "apiMatchId": 984099,
+    "odds": {
+      "home": 1.80,
+      "draw": 3.50,
+      "away": 4.10
+    }
+  },
+
+  "bets/bet_001": {
+    "id": "bet_001",
+    "userId": "uid_abc123",
+    "matchId": "match_001",
+    "officeId": "office_001",
+    "prediction": "home",
+    "amount": 100,
+    "oddsAtBet": 1.45,
+    "status": "pending",
+    "gainedPoints": 0,
+    "createdAt": "2026-03-19T14:30:00Z"
+  },
+
+  "bets/bet_002__won": {
+    "id": "bet_002",
+    "userId": "uid_def456",
+    "matchId": "match_002",
+    "officeId": "office_001",
+    "prediction": "home",
+    "amount": 200,
+    "oddsAtBet": 1.80,
+    "status": "won",
+    "gainedPoints": 360,
+    "createdAt": "2026-03-14T10:00:00Z"
+  },
+
+  "bets/bet_003__lost": {
+    "id": "bet_003",
+    "userId": "uid_ghi789",
+    "matchId": "match_002",
+    "officeId": "office_001",
+    "prediction": "away",
+    "amount": 150,
+    "oddsAtBet": 4.10,
+    "status": "lost",
+    "gainedPoints": 0,
+    "createdAt": "2026-03-14T11:00:00Z"
+  },
+
+  "polls/poll_001": {
+    "id": "poll_001",
+    "officeId": "office_001",
+    "question": "Qui va gagner la Champions League 2026 ?",
+    "options": ["Real Madrid", "Manchester City", "PSG", "Bayern Munich"],
+    "votes": {
+      "uid_abc123": "PSG",
+      "uid_def456": "Real Madrid",
+      "uid_ghi789": "Manchester City"
+    },
+    "createdBy": "uid_abc123",
+    "closesAt": "2026-04-01T23:59:00Z",
+    "createdAt": "2026-03-15T09:00:00Z"
+  },
+
+  "leaderboard/office_001/rankings/uid_abc123": {
+    "userId": "uid_abc123",
+    "displayName": "Michael Scott",
+    "photoURL": "https://example.com/michael.jpg",
+    "points": 1250,
+    "wins": 12,
+    "losses": 5,
+    "streak": 3,
+    "rank": 1
+  },
+
+  "leaderboard/office_001/rankings/uid_def456": {
+    "userId": "uid_def456",
+    "displayName": "Jim Halpert",
+    "photoURL": "https://example.com/jim.jpg",
+    "points": 1100,
+    "wins": 10,
+    "losses": 7,
+    "streak": -1,
+    "rank": 2
+  },
+
+  "dundieAwards/award_001": {
+    "id": "award_001",
+    "officeId": "office_001",
+    "title": "The Michael Scott Award",
+    "emoji": "🏆",
+    "description": "Meilleur parieur du mois",
+    "winnerId": "uid_abc123",
+    "season": "2026-S1",
+    "createdAt": "2026-03-01T12:00:00Z"
+  },
+
+  "dundieAwards/award_002": {
+    "id": "award_002",
+    "officeId": "office_001",
+    "title": "Dwight Schrute Hustle Award",
+    "emoji": "🥋",
+    "description": "Plus longue série de victoires (10+)",
+    "winnerId": "uid_def456",
+    "season": "2026-S1",
+    "createdAt": "2026-03-10T18:00:00Z"
+  }
+}

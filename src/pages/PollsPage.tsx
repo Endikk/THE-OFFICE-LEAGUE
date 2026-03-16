@@ -16,7 +16,7 @@ export default function PollsPage() {
   async function loadPolls() {
     if (!userData?.officeId) return;
     const data = await getOfficePolls(userData.officeId);
-    setPolls(data.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
+    setPolls(data);
     setLoading(false);
   }
 
@@ -71,7 +71,7 @@ export default function PollsPage() {
             />
           ))}
           <div className="flex gap-2 mt-2">
-            {options.length < 4 && (
+            {options.length < 6 && (
               <button
                 onClick={() => setOptions([...options, ''])}
                 className="text-sm text-dunder-blue hover:underline"

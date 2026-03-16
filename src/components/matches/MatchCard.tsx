@@ -1,78 +1,83 @@
 import { Calendar } from 'lucide-react';
-import type { ApiFixture } from '../../services/api-football';
+import type { Match } from '../../types';
 
 interface MatchCardProps {
-  fixture: ApiFixture;
-  onBet?: (fixtureId: number) => void;
+  match: Match;
+  onBet?: (match: Match) => void;
 }
 
-function getStatusLabel(status: string): string {
+function getStatusLabel(status: Match['status']): string {
   const map: Record<string, string> = {
-    NS: 'À venir',
-    '1H': '1ère MT',
-    HT: 'Mi-temps',
-    '2H': '2ème MT',
-    FT: 'Terminé',
-    AET: 'Prolongations',
-    PEN: 'Tirs au but',
+    upcoming: 'A venir',
+    live: 'En direct',
+    finished: 'Terminé',
   };
   return map[status] || status;
 }
 
-function getStatusColor(status: string): string {
-  if (status === 'FT' || status === 'AET' || status === 'PEN') return 'bg-gray-500';
-  if (status === 'NS') return 'bg-dunder-blue';
+function getStatusColor(status: Match['status']): string {
+  if (status === 'finished') return 'bg-gray-500';
+  if (status === 'upcoming') return 'bg-dunder-blue';
   return 'bg-dunder-green animate-pulse';
 }
 
-export default function MatchCard({ fixture, onBet }: MatchCardProps) {
-  const { fixture: fix, teams, goals } = fixture;
-  const isUpcoming = fix.status.short === 'NS';
-  const matchDate = new Date(fix.date);
+export default function MatchCard({ match, onBet }: MatchCardProps) {
+  const startTime = match.startTime instanceof Date
+    ? match.startTime
+    : match.startTime?.toDate?.() || new Date();
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 hover:shadow-md transition-shadow">
-      <div className="flex items-center justify-between mb-4">
-        <span className="text-xs text-gray-400 flex items-center gap-1">
-          <Calendar className="w-3 h-3" />
-          {matchDate.toLocaleDateString('fr-FR', {
+      <div className="flex items-center justify-between mb-1">
+        <span className="text-xs text-dunder-blue font-medium">{match.league}</span>
+        <span className={`text-xs text-white px-2 py-0.5 rounded-full ${getStatusColor(match.status)}`}>
+          {getStatusLabel(match.status)}
+        </span>
+      </div>
+      <div className="flex items-center gap-1 mb-4">
+        <Calendar className="w-3 h-3 text-gray-400" />
+        <span className="text-xs text-gray-400">
+          {startTime.toLocaleDateString('fr-FR', {
             day: 'numeric',
             month: 'short',
             hour: '2-digit',
             minute: '2-digit',
           })}
         </span>
-        <span className={`text-xs text-white px-2 py-0.5 rounded-full ${getStatusColor(fix.status.short)}`}>
-          {getStatusLabel(fix.status.short)}
-        </span>
       </div>
 
       <div className="flex items-center justify-between gap-4">
         <div className="flex-1 text-center">
-          <img src={teams.home.logo} alt={teams.home.name} className="w-12 h-12 mx-auto mb-2 object-contain" />
-          <p className="text-sm font-medium truncate">{teams.home.name}</p>
+          <p className="text-sm font-semibold">{match.homeTeam}</p>
         </div>
 
         <div className="text-center px-4">
-          {isUpcoming ? (
+          {match.status === 'upcoming' ? (
             <span className="text-2xl font-bold text-gray-300">VS</span>
           ) : (
             <div className="text-2xl font-bold text-dunder-blue">
-              {goals.home} - {goals.away}
+              {match.homeScore} - {match.awayScore}
             </div>
           )}
         </div>
 
         <div className="flex-1 text-center">
-          <img src={teams.away.logo} alt={teams.away.name} className="w-12 h-12 mx-auto mb-2 object-contain" />
-          <p className="text-sm font-medium truncate">{teams.away.name}</p>
+          <p className="text-sm font-semibold">{match.awayTeam}</p>
         </div>
       </div>
 
-      {isUpcoming && onBet && (
+      {match.status === 'upcoming' && (
+        <div className="flex justify-between mt-4 text-xs text-gray-400">
+          <span>x{match.odds.home.toFixed(2)}</span>
+          <span>x{match.odds.draw.toFixed(2)}</span>
+          <span>x{match.odds.away.toFixed(2)}</span>
+        </div>
+      )}
+
+      {match.status === 'upcoming' && onBet && (
         <button
-          onClick={() => onBet(fix.id)}
-          className="mt-4 w-full bg-dunder-gold text-white py-2 rounded-lg font-semibold text-sm hover:bg-dunder-gold/90 transition-colors"
+          onClick={() => onBet(match)}
+          className="mt-3 w-full bg-dunder-gold text-white py-2 rounded-lg font-semibold text-sm hover:bg-dunder-gold/90 transition-colors"
         >
           Parier sur ce match
         </button>
