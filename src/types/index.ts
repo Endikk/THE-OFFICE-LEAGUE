@@ -117,9 +117,41 @@ export interface RankingEntry {
   losses: number;
   streak: number;
   rank: number;
+  totalBets: number;
+  favoriteRate: number;         // % de paris sur les favoris (cote < 2.0)
 }
 
+// ─── Titres dynamiques basés sur les stats ───
+export type LeaderboardTitle =
+  | 'Le Nostradamus'
+  | 'Le Flambeur'
+  | 'Ice Cold Bets'
+  | 'Le Soldat'
+  | 'Mr. Decontracte'
+  | 'Le Fantome'
+  | 'Le Rookie';
+
+export const LEADERBOARD_TITLES: Record<LeaderboardTitle, { emoji: string; description: string }> = {
+  'Le Nostradamus': { emoji: '🔮', description: 'Plus de victoires' },
+  'Le Flambeur': { emoji: '💸', description: 'Plus de defaites' },
+  'Ice Cold Bets': { emoji: '🧊', description: 'Ne parie que sur les favoris' },
+  'Le Soldat': { emoji: '🫡', description: 'Le plus de paris places' },
+  'Mr. Decontracte': { emoji: '😎', description: 'Meilleur ratio wins/losses' },
+  'Le Fantome': { emoji: '👻', description: '0 participation' },
+  'Le Rookie': { emoji: '🐣', description: 'Nouveau dans le game' },
+};
+
 // ============ DUNDIE AWARDS ============
+export type DundieType =
+  | 'nostradamus'
+  | 'flambeur'
+  | 'ice_cold'
+  | 'chaotique'
+  | 'statisticien'
+  | 'fantome'
+  | 'decontracte'
+  | 'soldat';
+
 export interface DundieAward {
   id: string;
   officeId: string;
@@ -127,9 +159,23 @@ export interface DundieAward {
   emoji: string;                // "🏆", "😏", etc.
   description: string;
   winnerId: string;             // userId
+  winnerName?: string;          // displayName du gagnant
   season: string;               // "2026-S1", "2026-S2", etc.
+  dundieType?: DundieType;      // type pour dédupliquer
+  period?: 'weekly' | 'monthly';
   createdAt: FirestoreDate;
 }
+
+export const DUNDIE_CATALOG: Record<DundieType, { title: string; emoji: string; description: string }> = {
+  nostradamus: { title: 'Le Nostradamus', emoji: '🏆', description: 'Plus long streak de bonnes reponses' },
+  flambeur: { title: 'Le Flambeur', emoji: '💸', description: 'A le plus perdu en une semaine' },
+  ice_cold: { title: 'Ice Cold Bets', emoji: '🧊', description: 'Ne joue que les favoris' },
+  chaotique: { title: 'Le Chaotique', emoji: '🎰', description: 'Parie toujours sur l\'outsider' },
+  statisticien: { title: 'Le Statisticien', emoji: '📊', description: 'Meilleur ratio wins/losses' },
+  fantome: { title: 'Le Fantome', emoji: '😐', description: 'Le moins actif' },
+  decontracte: { title: 'Mr. Decontracte', emoji: '😎', description: 'Gagne sans forcer' },
+  soldat: { title: 'Le Soldat', emoji: '🫡', description: 'Le plus de paris places' },
+};
 
 // ============ API CACHE ============
 export interface ApiCacheEntry {
