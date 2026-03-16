@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Trophy, Home, BarChart3, Vote, Award, LogOut, Coins, Building2 } from 'lucide-react';
+import { Trophy, Home, BarChart3, Vote, Award, LogOut, Coins, Building2, Globe } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
 export default function Navbar() {
@@ -9,6 +9,7 @@ export default function Navbar() {
   const links = [
     { to: '/', icon: Home, label: 'Accueil' },
     { to: '/matches', icon: Trophy, label: 'Matchs' },
+    { to: '/worldcup', icon: Globe, label: 'CDM 2026', highlight: true },
     { to: '/leaderboard', icon: BarChart3, label: 'Classement' },
     { to: '/polls', icon: Vote, label: 'Sondages' },
     { to: '/awards', icon: Award, label: 'Dundies' },
@@ -25,13 +26,17 @@ export default function Navbar() {
           </Link>
 
           <div className="hidden md:flex items-center gap-1">
-            {links.map(({ to, icon: Icon, label }) => (
+            {links.map(({ to, icon: Icon, label, highlight }) => (
               <Link
                 key={to}
                 to={to}
                 className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-150 ${
                   location.pathname === to
-                    ? 'bg-white/15 text-white'
+                    ? highlight
+                      ? 'bg-office-mustard/20 text-office-mustard'
+                      : 'bg-white/15 text-white'
+                    : highlight
+                    ? 'text-office-mustard/60 hover:bg-office-mustard/10 hover:text-office-mustard'
                     : 'text-white/60 hover:bg-white/10 hover:text-white'
                 }`}
               >
@@ -73,12 +78,14 @@ export default function Navbar() {
 
       {/* Mobile nav */}
       <div className="md:hidden flex justify-around border-t border-white/10 py-2 px-1">
-        {links.slice(0, 5).map(({ to, icon: Icon, label }) => (
+        {links.slice(0, 5).map(({ to, icon: Icon, label, highlight }) => (
           <Link
             key={to}
             to={to}
             className={`flex flex-col items-center gap-0.5 text-[10px] px-2 py-1 rounded-lg transition-colors ${
-              location.pathname === to ? 'text-office-mustard' : 'text-white/40'
+              location.pathname === to
+                ? highlight ? 'text-office-mustard' : 'text-office-mustard'
+                : 'text-white/40'
             }`}
           >
             <Icon className="w-5 h-5" />

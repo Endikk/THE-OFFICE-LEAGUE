@@ -3,6 +3,16 @@ import type { Timestamp } from 'firebase/firestore';
 // ============ FIRESTORE TIMESTAMP HELPER ============
 export type FirestoreDate = Timestamp | Date;
 
+// ============ SPORTS ============
+export type Sport = 'football' | 'basketball' | 'nfl' | 'rugby';
+
+export const SPORT_CONFIG: Record<Sport, { emoji: string; label: string }> = {
+  football: { emoji: '⚽', label: 'Football' },
+  basketball: { emoji: '🏀', label: 'NBA' },
+  nfl: { emoji: '🏈', label: 'NFL' },
+  rugby: { emoji: '🏉', label: 'Rugby' },
+};
+
 // ============ USERS ============
 export interface User {
   uid: string;
@@ -39,16 +49,22 @@ export interface MatchOdds {
 
 export interface Match {
   id: string;
-  sport: string;                // "football", "basketball", etc.
+  sport: Sport;
   league: string;               // "Ligue 1", "Premier League", etc.
   homeTeam: string;
   awayTeam: string;
+  homeLogo?: string;
+  awayLogo?: string;
   homeScore: number | null;
   awayScore: number | null;
   status: MatchStatus;
   startTime: FirestoreDate;
-  apiMatchId: number;           // ID API-Football
+  apiMatchId: number;           // ID API-Football ou hash ESPN
   odds: MatchOdds;
+  apiSource?: 'api-football' | 'espn' | 'balldontlie';
+  isWorldCup?: boolean;
+  worldCupGroup?: string;       // "A", "B", etc.
+  worldCupStage?: WorldCupStage;
 }
 
 // ============ BETS ============
@@ -102,5 +118,56 @@ export interface DundieAward {
   description: string;
   winnerId: string;             // userId
   season: string;               // "2026-S1", "2026-S2", etc.
+  createdAt: FirestoreDate;
+}
+
+// ============ API CACHE ============
+export interface ApiCacheEntry {
+  id: string;
+  data: string;                 // JSON stringified
+  expiresAt: FirestoreDate;
+  sport: Sport;
+  cacheKey: string;
+  createdAt: FirestoreDate;
+}
+
+// ============ WORLD CUP 2026 ============
+export type WorldCupStage = 'group' | 'round_of_32' | 'round_of_16' | 'quarter' | 'semi' | 'third_place' | 'final';
+
+export interface WorldCupTeam {
+  id: number | string;
+  name: string;
+  code: string;                 // "FRA", "BRA", etc.
+  flag?: string;
+  group: string;                // "A", "B", etc.
+}
+
+export interface WorldCupGroup {
+  name: string;                 // "Groupe A"
+  teams: WorldCupGroupTeam[];
+}
+
+export interface WorldCupGroupTeam {
+  team: WorldCupTeam;
+  played: number;
+  wins: number;
+  draws: number;
+  losses: number;
+  goalsFor: number;
+  goalsAgainst: number;
+  goalDifference: number;
+  points: number;
+}
+
+export interface WorldCupSpecialBet {
+  id: string;
+  officeId: string;
+  userId: string;
+  type: 'winner' | 'top_scorer' | 'exact_score';
+  prediction: string;           // nom d'équipe, joueur, ou "2-1"
+  matchId?: string;             // pour exact_score seulement
+  amount: number;
+  status: BetStatus;
+  gainedPoints: number;
   createdAt: FirestoreDate;
 }

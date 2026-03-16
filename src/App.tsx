@@ -18,6 +18,7 @@ import LeaderboardPage from './pages/LeaderboardPage';
 import PollsPage from './pages/PollsPage';
 import AwardsPage from './pages/AwardsPage';
 import OfficeDashboard from './pages/OfficeDashboard';
+import WorldCupPage from './pages/WorldCupPage';
 
 function AppRoutes() {
   return (
@@ -52,6 +53,14 @@ function AppRoutes() {
           <div className="min-h-screen bg-office-paper">
             <Navbar />
             <MatchesPage />
+          </div>
+        </ProtectedRoute>
+      } />
+      <Route path="/worldcup" element={
+        <ProtectedRoute requireOffice>
+          <div className="min-h-screen bg-office-paper">
+            <Navbar />
+            <WorldCupPage />
           </div>
         </ProtectedRoute>
       } />
