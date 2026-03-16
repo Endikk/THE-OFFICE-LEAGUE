@@ -7,7 +7,12 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "deploy": "./scripts/deploy.sh",
+    "deploy:hosting": "./scripts/deploy.sh hosting",
+    "deploy:rules": "./scripts/deploy.sh rules",
+    "deploy:setup": "./scripts/deploy.sh setup",
+    "check": "./scripts/pre-launch-check.sh"
   },
   "dependencies": {
     "firebase": "^12.10.0",
