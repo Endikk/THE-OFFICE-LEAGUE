@@ -6,9 +6,9 @@ import LoadingSpinner from '../components/common/LoadingSpinner';
 import { useAuth } from '../context/AuthContext';
 import { getUpcomingMatches, getLiveMatches, getFinishedMatches } from '../services/matches';
 import { getMatchBets } from '../services/bets';
+import { getOfficeMembers } from '../services/office';
 import { fetchTodayMatches, getApiFootballUsage } from '../services/sports-api';
-import { checkAndResolveFinished, detectNewlyFinished } from '../services/match-resolver';
-import type { Match, Bet, Sport } from '../types';
+import type { Match, Bet, BetPrediction, Sport, User } from '../types';
 
 // ─── Config des sports ───
 const SPORTS: { key: Sport | 'all'; emoji: string; label: string }[] = [
@@ -27,7 +27,7 @@ const TABS: { key: TabKey; label: string; icon: typeof Trophy }[] = [
   { key: 'finished', label: 'Termines', icon: CheckCircle },
 ];
 
-const REFRESH_INTERVAL = 60_000; // 60 secondes
+const REFRESH_INTERVAL = 60_000;
 
 export default function MatchesPage() {
   const { userData } = useAuth();
@@ -36,13 +36,21 @@ export default function MatchesPage() {
   const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [betMatch, setBetMatch] = useState<Match | null>(null);
+  const [betMatch, setBetMatch] = useState<{ match: Match; prediction?: BetPrediction } | null>(null);
   const [officeBets, setOfficeBets] = useState<Record<string, Bet[]>>({});
+  const [officeMembers, setOfficeMembers] = useState<Pick<User, 'uid' | 'displayName' | 'photoURL'>[]>([]);
   const [apiUsage, setApiUsage] = useState({ count: 0, remaining: 100 });
   const [lastRefresh, setLastRefresh] = useState<Date | null>(null);
   const [liveCount, setLiveCount] = useState(0);
-  const previousMatchesRef = useRef<Match[]>([]);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // ─── Charger les membres du bureau ───
+  useEffect(() => {
+    if (!userData?.officeId) return;
+    getOfficeMembers(userData.officeId).then(members => {
+      setOfficeMembers(members.map(m => ({ uid: m.uid, displayName: m.displayName, photoURL: m.photoURL })));
+    }).catch(() => {});
+  }, [userData?.officeId]);
 
   // ─── Charger les matchs ───
   const loadMatches = useCallback(async (showLoading = true) => {
@@ -52,14 +60,10 @@ export default function MatchesPage() {
     try {
       const sport = selectedSport === 'all' ? undefined : selectedSport;
 
-      // D'abord fetch depuis les APIs externes (cache intelligent)
-      try {
-        await fetchTodayMatches(sport);
-      } catch {
-        // Les APIs externes ont échoué, on continue avec Firestore
-      }
+      // Fetch depuis les APIs externes (cache intelligent)
+      try { await fetchTodayMatches(sport); } catch { /* continue with Firestore */ }
 
-      // Ensuite lire depuis Firestore
+      // Lire depuis Firestore
       let result: Match[] = [];
       if (activeTab === 'live') {
         result = await getLiveMatches();
@@ -72,16 +76,9 @@ export default function MatchesPage() {
         if (sport) result = result.filter(m => m.sport === sport);
       }
 
-      // Détecter les matchs nouvellement terminés → résoudre les paris
-      const newlyFinished = detectNewlyFinished(previousMatchesRef.current, result);
-      if (newlyFinished.length > 0) {
-        checkAndResolveFinished(newlyFinished).catch(() => {});
-      }
-      previousMatchesRef.current = result;
-
       setMatches(result);
 
-      // Compter les lives (pour le badge)
+      // Compter les lives
       const allLive = await getLiveMatches();
       setLiveCount(allLive.length);
 
@@ -97,7 +94,6 @@ export default function MatchesPage() {
         setOfficeBets(betsMap);
       }
 
-      // API usage
       const usage = await getApiFootballUsage();
       setApiUsage(usage);
       setLastRefresh(new Date());
@@ -109,27 +105,25 @@ export default function MatchesPage() {
     }
   }, [selectedSport, activeTab, userData?.officeId]);
 
-  // ─── Chargement initial + changement de filtre ───
-  useEffect(() => {
-    loadMatches(true);
-  }, [loadMatches]);
+  useEffect(() => { loadMatches(true); }, [loadMatches]);
 
-  // ─── Auto-refresh pour les matchs live ───
+  // Auto-refresh live
   useEffect(() => {
     if (intervalRef.current) clearInterval(intervalRef.current);
-
     if (activeTab === 'live' || liveCount > 0) {
-      intervalRef.current = setInterval(() => {
-        loadMatches(false);
-      }, REFRESH_INTERVAL);
+      intervalRef.current = setInterval(() => loadMatches(false), REFRESH_INTERVAL);
     }
-
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-    };
+    return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
   }, [activeTab, liveCount, loadMatches]);
 
-  const handleRefresh = () => loadMatches(false);
+  const handleBet = (match: Match, prediction?: BetPrediction) => {
+    setBetMatch({ match, prediction });
+  };
+
+  const handleBetSuccess = () => {
+    // Recharger les paris après un nouveau pari
+    loadMatches(false);
+  };
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
@@ -144,14 +138,12 @@ export default function MatchesPage() {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          {/* API usage indicator */}
           <div className="hidden sm:flex items-center gap-1.5 text-xs text-office-brown/40">
             <div className={`w-2 h-2 rounded-full ${apiUsage.remaining > 20 ? 'bg-office-green' : apiUsage.remaining > 5 ? 'bg-office-mustard' : 'bg-office-red'}`} />
             API: {apiUsage.remaining}/100
           </div>
-          {/* Refresh button */}
           <button
-            onClick={handleRefresh}
+            onClick={() => loadMatches(false)}
             disabled={refreshing}
             className="flex items-center gap-1.5 text-sm text-office-navy bg-office-paper hover:bg-office-paper-dark px-3 py-2 rounded-lg transition-colors disabled:opacity-50"
           >
@@ -215,16 +207,7 @@ export default function MatchesPage() {
             )}
           </div>
           <p className="text-office-brown/40 font-medium">
-            {activeTab === 'live'
-              ? 'Aucun match en direct pour le moment'
-              : activeTab === 'upcoming'
-              ? 'Aucun match a venir'
-              : 'Aucun match termine'}
-          </p>
-          <p className="text-xs text-office-brown/30 mt-1">
-            {activeTab === 'live'
-              ? 'Les scores se mettent a jour toutes les 60 secondes'
-              : 'Revenez plus tard ou changez de sport'}
+            {activeTab === 'live' ? 'Aucun match en direct' : activeTab === 'upcoming' ? 'Aucun match a venir' : 'Aucun match termine'}
           </p>
         </div>
       ) : (
@@ -234,7 +217,9 @@ export default function MatchesPage() {
               key={match.id}
               match={match}
               officeBets={officeBets[match.id]}
-              onBet={match.status === 'upcoming' ? setBetMatch : undefined}
+              officeMembers={officeMembers}
+              currentUserId={userData?.uid}
+              onBet={match.status === 'upcoming' ? (m, pred) => handleBet(m, pred) : undefined}
             />
           ))}
         </div>
@@ -250,7 +235,14 @@ export default function MatchesPage() {
 
       {/* Bet modal */}
       {betMatch && (
-        <BetModal match={betMatch} onClose={() => setBetMatch(null)} />
+        <BetModal
+          match={betMatch.match}
+          initialPrediction={betMatch.prediction}
+          officeBets={officeBets[betMatch.match.id]}
+          officeMembers={officeMembers}
+          onClose={() => setBetMatch(null)}
+          onSuccess={handleBetSuccess}
+        />
       )}
     </div>
   );

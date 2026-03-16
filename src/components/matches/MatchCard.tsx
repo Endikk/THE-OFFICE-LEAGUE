@@ -1,10 +1,12 @@
-import { Calendar, Zap, Users } from 'lucide-react';
-import type { Match, Bet, Sport } from '../../types';
+import { Calendar, Zap, Lock } from 'lucide-react';
+import type { Match, Bet, BetPrediction, Sport, User } from '../../types';
 
 interface MatchCardProps {
   match: Match;
   officeBets?: Bet[];
-  onBet?: (match: Match) => void;
+  officeMembers?: Pick<User, 'uid' | 'displayName' | 'photoURL'>[];
+  currentUserId?: string;
+  onBet?: (match: Match, prediction: BetPrediction) => void;
 }
 
 function getStatusLabel(status: Match['status']): string {
@@ -42,22 +44,65 @@ function formatTime(date: Date | { toDate?: () => Date }): string {
   });
 }
 
-export default function MatchCard({ match, officeBets = [], onBet }: MatchCardProps) {
+// ─── Avatar mini-composant ───
+function MemberAvatar({ member }: { member: Pick<User, 'uid' | 'displayName' | 'photoURL'> }) {
+  if (member.photoURL) {
+    return (
+      <img
+        src={member.photoURL}
+        alt={member.displayName}
+        title={member.displayName}
+        className="w-6 h-6 rounded-full border-2 border-white object-cover -ml-1.5 first:ml-0"
+      />
+    );
+  }
+  return (
+    <div
+      title={member.displayName}
+      className="w-6 h-6 rounded-full border-2 border-white bg-office-navy/10 flex items-center justify-center text-[10px] font-bold text-office-navy -ml-1.5 first:ml-0"
+    >
+      {member.displayName.charAt(0).toUpperCase()}
+    </div>
+  );
+}
+
+export default function MatchCard({ match, officeBets = [], officeMembers = [], currentUserId, onBet }: MatchCardProps) {
   const startTime = match.startTime instanceof Date
     ? match.startTime
     : (match.startTime as { toDate?: () => Date })?.toDate?.() || new Date();
 
-  // Compter les paris du bureau
-  const homeBets = officeBets.filter(b => b.prediction === 'home').length;
-  const drawBets = officeBets.filter(b => b.prediction === 'draw').length;
-  const awayBets = officeBets.filter(b => b.prediction === 'away').length;
-  const totalBets = officeBets.length;
+  // Grouper les paris par prédiction
+  const betsByPrediction = (prediction: BetPrediction) =>
+    officeBets.filter(b => b.prediction === prediction);
+
+  const homeBets = betsByPrediction('home');
+  const drawBets = betsByPrediction('draw');
+  const awayBets = betsByPrediction('away');
+
+  // Le user courant a-t-il déjà parié ?
+  const userBet = currentUserId ? officeBets.find(b => b.userId === currentUserId) : null;
+
+  // Trouver le membre correspondant à un userId
+  const getMember = (userId: string) => officeMembers.find(m => m.uid === userId);
+
+  // Construire les options de pari
+  const betOptions: { key: BetPrediction; label: string; shortLabel: string; odds: number; bets: Bet[] }[] = [
+    { key: 'home', label: match.homeTeam, shortLabel: '1', odds: match.odds.home, bets: homeBets },
+    ...(match.odds.draw > 0 ? [{
+      key: 'draw' as BetPrediction,
+      label: 'Nul',
+      shortLabel: 'N',
+      odds: match.odds.draw,
+      bets: drawBets,
+    }] : []),
+    { key: 'away', label: match.awayTeam, shortLabel: '2', odds: match.odds.away, bets: awayBets },
+  ];
 
   return (
     <div className={`card overflow-hidden transition-shadow hover:shadow-lg ${
       match.status === 'live' ? 'ring-2 ring-office-red/30' : ''
     }`}>
-      {/* Header : ligue + statut */}
+      {/* Header */}
       <div className="flex items-center justify-between px-4 py-2.5 bg-office-paper/50 border-b border-office-paper-dark/40">
         <div className="flex items-center gap-2">
           <span className="text-sm">{getSportEmoji(match.sport)}</span>
@@ -72,7 +117,7 @@ export default function MatchCard({ match, officeBets = [], onBet }: MatchCardPr
         </span>
       </div>
 
-      {/* Corps : equipes + score */}
+      {/* Corps */}
       <div className="px-4 py-4">
         {/* Date */}
         <div className="flex items-center gap-1 mb-3">
@@ -85,9 +130,8 @@ export default function MatchCard({ match, officeBets = [], onBet }: MatchCardPr
           )}
         </div>
 
-        {/* Equipes */}
+        {/* Equipes + Score */}
         <div className="flex items-center gap-3">
-          {/* Home */}
           <div className="flex-1 text-center">
             {match.homeLogo && (
               <img src={match.homeLogo} alt="" className="w-8 h-8 mx-auto mb-1.5 object-contain" />
@@ -95,7 +139,6 @@ export default function MatchCard({ match, officeBets = [], onBet }: MatchCardPr
             <p className="text-sm font-semibold text-office-navy leading-tight">{match.homeTeam}</p>
           </div>
 
-          {/* Score / VS */}
           <div className="text-center px-3 min-w-[70px]">
             {match.status === 'upcoming' ? (
               <span className="text-2xl font-bold text-office-brown/20">VS</span>
@@ -106,7 +149,6 @@ export default function MatchCard({ match, officeBets = [], onBet }: MatchCardPr
             )}
           </div>
 
-          {/* Away */}
           <div className="flex-1 text-center">
             {match.awayLogo && (
               <img src={match.awayLogo} alt="" className="w-8 h-8 mx-auto mb-1.5 object-contain" />
@@ -115,64 +157,134 @@ export default function MatchCard({ match, officeBets = [], onBet }: MatchCardPr
           </div>
         </div>
 
-        {/* Cotes */}
+        {/* Boutons de pari inline + avatars des collègues */}
         {match.status === 'upcoming' && (
-          <div className="flex justify-between mt-4 gap-2">
-            {[
-              { key: 'home', label: '1', odds: match.odds.home },
-              ...(match.odds.draw > 0 ? [{ key: 'draw', label: 'N', odds: match.odds.draw }] : []),
-              { key: 'away', label: '2', odds: match.odds.away },
-            ].map(({ key, label, odds }) => (
-              <div key={key} className="flex-1 bg-office-paper rounded-lg py-1.5 text-center">
-                <span className="text-[10px] text-office-brown/40 block">{label}</span>
-                <span className="text-sm font-bold text-office-navy">x{odds.toFixed(2)}</span>
+          <div className="mt-4 space-y-1.5">
+            {betOptions.map(({ key, label, shortLabel, odds, bets }) => {
+              const isUserChoice = userBet?.prediction === key;
+              const betMembers = bets
+                .map(b => getMember(b.userId))
+                .filter((m): m is Pick<User, 'uid' | 'displayName' | 'photoURL'> => !!m);
+
+              return (
+                <button
+                  key={key}
+                  onClick={() => !userBet && onBet?.(match, key)}
+                  disabled={!!userBet}
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl border-2 transition-all text-left ${
+                    isUserChoice
+                      ? 'border-office-mustard bg-office-mustard/10'
+                      : userBet
+                      ? 'border-office-paper-dark/40 opacity-60 cursor-default'
+                      : 'border-office-paper-dark hover:border-office-navy/20 hover:bg-office-paper/50 cursor-pointer'
+                  }`}
+                >
+                  {/* Cote badge */}
+                  <span className={`text-xs font-bold px-2 py-1 rounded-lg flex-shrink-0 ${
+                    isUserChoice
+                      ? 'bg-office-mustard text-white'
+                      : 'bg-office-paper text-office-navy'
+                  }`}>
+                    {shortLabel}
+                  </span>
+
+                  {/* Label */}
+                  <span className="flex-1 text-sm font-medium text-office-navy truncate">
+                    {label}
+                  </span>
+
+                  {/* Avatars des collègues qui ont parié */}
+                  {betMembers.length > 0 && (
+                    <div className="flex items-center pl-1">
+                      {betMembers.slice(0, 4).map(member => (
+                        <MemberAvatar key={member.uid} member={member} />
+                      ))}
+                      {betMembers.length > 4 && (
+                        <span className="text-[10px] text-office-brown/40 ml-1">
+                          +{betMembers.length - 4}
+                        </span>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Cote */}
+                  <span className={`text-sm font-bold flex-shrink-0 ${
+                    isUserChoice ? 'text-office-mustard' : 'text-office-navy/70'
+                  }`}>
+                    x{odds.toFixed(2)}
+                  </span>
+                </button>
+              );
+            })}
+
+            {/* Indicateur pari déjà placé */}
+            {userBet && (
+              <div className="flex items-center justify-center gap-1.5 pt-1.5 text-xs text-office-brown/40">
+                <Lock className="w-3 h-3" />
+                <span>Pari place : {userBet.amount} coins</span>
               </div>
-            ))}
+            )}
           </div>
         )}
 
-        {/* Paris du bureau */}
-        {totalBets > 0 && (
+        {/* Résultat des paris (match terminé) */}
+        {match.status === 'finished' && officeBets.length > 0 && (
           <div className="mt-3 pt-3 border-t border-office-paper-dark/40">
-            <div className="flex items-center gap-1.5 mb-2">
-              <Users className="w-3.5 h-3.5 text-office-brown/40" />
-              <span className="text-[11px] text-office-brown/40 font-medium">
-                {totalBets} pari{totalBets > 1 ? 's' : ''} dans le bureau
-              </span>
+            <div className="space-y-1">
+              {officeBets.map((bet) => {
+                const member = getMember(bet.userId);
+                if (!member) return null;
+                const isMe = bet.userId === currentUserId;
+                return (
+                  <div key={bet.id} className={`flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs ${
+                    bet.status === 'won' ? 'bg-office-green/5' : bet.status === 'lost' ? 'bg-office-red/5' : 'bg-office-paper/50'
+                  }`}>
+                    <MemberAvatar member={member} />
+                    <span className={`font-medium ${isMe ? 'text-office-navy' : 'text-office-brown/60'}`}>
+                      {isMe ? 'Toi' : member.displayName.split(' ')[0]}
+                    </span>
+                    <span className="text-office-brown/40">→ {bet.prediction === 'home' ? match.homeTeam.split(' ')[0] : bet.prediction === 'away' ? match.awayTeam.split(' ')[0] : 'Nul'}</span>
+                    <span className="ml-auto font-bold">
+                      {bet.status === 'won' ? (
+                        <span className="text-office-green">+{bet.gainedPoints}</span>
+                      ) : bet.status === 'lost' ? (
+                        <span className="text-office-red">-{bet.amount}</span>
+                      ) : (
+                        <span className="text-office-brown/40">{bet.amount}</span>
+                      )}
+                    </span>
+                  </div>
+                );
+              })}
             </div>
-            <div className="flex gap-1">
-              {homeBets > 0 && (
-                <div className="flex-1 bg-office-navy/5 rounded px-2 py-1 text-center">
-                  <span className="text-[10px] text-office-navy/60">{match.homeTeam.split(' ')[0]}</span>
-                  <span className="block text-xs font-bold text-office-navy">{homeBets}</span>
-                </div>
-              )}
-              {drawBets > 0 && (
-                <div className="flex-1 bg-office-brown/5 rounded px-2 py-1 text-center">
-                  <span className="text-[10px] text-office-brown/60">Nul</span>
-                  <span className="block text-xs font-bold text-office-brown">{drawBets}</span>
-                </div>
-              )}
-              {awayBets > 0 && (
-                <div className="flex-1 bg-office-mustard/5 rounded px-2 py-1 text-center">
-                  <span className="text-[10px] text-office-mustard/80">{match.awayTeam.split(' ')[0]}</span>
-                  <span className="block text-xs font-bold text-office-mustard">{awayBets}</span>
-                </div>
-              )}
+          </div>
+        )}
+
+        {/* Paris du bureau (match live) */}
+        {match.status === 'live' && officeBets.length > 0 && (
+          <div className="mt-3 pt-3 border-t border-office-paper-dark/40">
+            <div className="flex gap-2">
+              {betOptions.map(({ key, shortLabel, bets }) => {
+                if (bets.length === 0) return null;
+                const betMembers = bets
+                  .map(b => getMember(b.userId))
+                  .filter((m): m is Pick<User, 'uid' | 'displayName' | 'photoURL'> => !!m);
+
+                return (
+                  <div key={key} className="flex-1 bg-office-paper/50 rounded-lg p-2 text-center">
+                    <span className="text-[10px] text-office-brown/40 block mb-1">{shortLabel}</span>
+                    <div className="flex justify-center">
+                      {betMembers.slice(0, 3).map(member => (
+                        <MemberAvatar key={member.uid} member={member} />
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
         )}
       </div>
-
-      {/* Bouton parier */}
-      {match.status === 'upcoming' && onBet && (
-        <button
-          onClick={() => onBet(match)}
-          className="w-full bg-office-mustard text-white py-2.5 font-semibold text-sm hover:bg-office-mustard-light transition-colors border-t border-office-mustard-dark/20"
-        >
-          Parier sur ce match
-        </button>
-      )}
     </div>
   );
 }

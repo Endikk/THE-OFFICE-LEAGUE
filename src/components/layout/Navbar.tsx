@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Trophy, Home, BarChart3, Vote, Award, LogOut, Coins, Building2, Globe } from 'lucide-react';
+import { Trophy, Home, BarChart3, Vote, Award, LogOut, Coins, Building2, Globe, Target } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
 export default function Navbar() {
@@ -9,6 +9,7 @@ export default function Navbar() {
   const links = [
     { to: '/', icon: Home, label: 'Accueil' },
     { to: '/matches', icon: Trophy, label: 'Matchs' },
+    { to: '/bets', icon: Target, label: 'Mes paris' },
     { to: '/worldcup', icon: Globe, label: 'CDM 2026', highlight: true },
     { to: '/leaderboard', icon: BarChart3, label: 'Classement' },
     { to: '/polls', icon: Vote, label: 'Sondages' },
@@ -78,7 +79,7 @@ export default function Navbar() {
 
       {/* Mobile nav */}
       <div className="md:hidden flex justify-around border-t border-white/10 py-2 px-1">
-        {links.slice(0, 5).map(({ to, icon: Icon, label, highlight }) => (
+        {links.slice(0, 4).map(({ to, icon: Icon, label, highlight }) => (
           <Link
             key={to}
             to={to}

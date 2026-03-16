@@ -1,7 +1,12 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
+import { NotificationProvider } from './context/NotificationContext';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import Navbar from './components/layout/Navbar';
+import ToastContainer from './components/common/ToastContainer';
+import Confetti from './components/common/Confetti';
+import { useNotifications } from './context/NotificationContext';
+import { useMatchListener } from './hooks/useMatchListener';
 
 // Pages publiques (auth)
 import LoginPage from './pages/LoginPage';
@@ -14,99 +19,111 @@ import CreateOfficePage from './pages/CreateOfficePage';
 // Pages protégées (connecté + office)
 import Dashboard from './pages/Dashboard';
 import MatchesPage from './pages/MatchesPage';
+import BetHistoryPage from './pages/BetHistoryPage';
 import LeaderboardPage from './pages/LeaderboardPage';
 import PollsPage from './pages/PollsPage';
 import AwardsPage from './pages/AwardsPage';
 import OfficeDashboard from './pages/OfficeDashboard';
 import WorldCupPage from './pages/WorldCupPage';
 
+// ─── Layout avec Navbar + listener de matchs ───
+function AppLayout({ children }: { children: React.ReactNode }) {
+  useMatchListener();
+  return (
+    <div className="min-h-screen bg-office-paper">
+      <Navbar />
+      {children}
+    </div>
+  );
+}
+
+// ─── Overlay global (toasts + confetti) ───
+function GlobalOverlay() {
+  const { showVictory } = useNotifications();
+  return (
+    <>
+      <ToastContainer />
+      <Confetti active={showVictory} />
+    </>
+  );
+}
+
 function AppRoutes() {
   return (
-    <Routes>
-      {/* ─── Routes publiques (auth) ─── */}
-      <Route path="/login" element={<LoginPage />} />
-      <Route path="/register" element={<RegisterPage />} />
+    <>
+      <GlobalOverlay />
+      <Routes>
+        {/* ─── Routes publiques (auth) ─── */}
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
 
-      {/* ─── Routes semi-protégées (connecté, pas besoin d'office) ─── */}
-      <Route path="/office/join" element={
-        <ProtectedRoute>
-          <JoinOfficePage />
-        </ProtectedRoute>
-      } />
-      <Route path="/office/create" element={
-        <ProtectedRoute>
-          <CreateOfficePage />
-        </ProtectedRoute>
-      } />
+        {/* ─── Routes semi-protégées (connecté, pas besoin d'office) ─── */}
+        <Route path="/office/join" element={
+          <ProtectedRoute>
+            <JoinOfficePage />
+          </ProtectedRoute>
+        } />
+        <Route path="/office/create" element={
+          <ProtectedRoute>
+            <CreateOfficePage />
+          </ProtectedRoute>
+        } />
 
-      {/* ─── Routes protégées (connecté + office requis) ─── */}
-      <Route path="/" element={
-        <ProtectedRoute requireOffice>
-          <div className="min-h-screen bg-office-paper">
-            <Navbar />
-            <Dashboard />
-          </div>
-        </ProtectedRoute>
-      } />
-      <Route path="/matches" element={
-        <ProtectedRoute requireOffice>
-          <div className="min-h-screen bg-office-paper">
-            <Navbar />
-            <MatchesPage />
-          </div>
-        </ProtectedRoute>
-      } />
-      <Route path="/worldcup" element={
-        <ProtectedRoute requireOffice>
-          <div className="min-h-screen bg-office-paper">
-            <Navbar />
-            <WorldCupPage />
-          </div>
-        </ProtectedRoute>
-      } />
-      <Route path="/leaderboard" element={
-        <ProtectedRoute requireOffice>
-          <div className="min-h-screen bg-office-paper">
-            <Navbar />
-            <LeaderboardPage />
-          </div>
-        </ProtectedRoute>
-      } />
-      <Route path="/polls" element={
-        <ProtectedRoute requireOffice>
-          <div className="min-h-screen bg-office-paper">
-            <Navbar />
-            <PollsPage />
-          </div>
-        </ProtectedRoute>
-      } />
-      <Route path="/awards" element={
-        <ProtectedRoute requireOffice>
-          <div className="min-h-screen bg-office-paper">
-            <Navbar />
-            <AwardsPage />
-          </div>
-        </ProtectedRoute>
-      } />
-      <Route path="/office" element={
-        <ProtectedRoute requireOffice>
-          <div className="min-h-screen bg-office-paper">
-            <Navbar />
-            <OfficeDashboard />
-          </div>
-        </ProtectedRoute>
-      } />
+        {/* ─── Routes protégées (connecté + office requis) ─── */}
+        <Route path="/" element={
+          <ProtectedRoute requireOffice>
+            <AppLayout><Dashboard /></AppLayout>
+          </ProtectedRoute>
+        } />
+        <Route path="/matches" element={
+          <ProtectedRoute requireOffice>
+            <AppLayout><MatchesPage /></AppLayout>
+          </ProtectedRoute>
+        } />
+        <Route path="/bets" element={
+          <ProtectedRoute requireOffice>
+            <AppLayout><BetHistoryPage /></AppLayout>
+          </ProtectedRoute>
+        } />
+        <Route path="/worldcup" element={
+          <ProtectedRoute requireOffice>
+            <AppLayout><WorldCupPage /></AppLayout>
+          </ProtectedRoute>
+        } />
+        <Route path="/leaderboard" element={
+          <ProtectedRoute requireOffice>
+            <AppLayout><LeaderboardPage /></AppLayout>
+          </ProtectedRoute>
+        } />
+        <Route path="/polls" element={
+          <ProtectedRoute requireOffice>
+            <AppLayout><PollsPage /></AppLayout>
+          </ProtectedRoute>
+        } />
+        <Route path="/awards" element={
+          <ProtectedRoute requireOffice>
+            <AppLayout><AwardsPage /></AppLayout>
+          </ProtectedRoute>
+        } />
+        <Route path="/office" element={
+          <ProtectedRoute requireOffice>
+            <AppLayout><OfficeDashboard /></AppLayout>
+          </ProtectedRoute>
+        } />
 
-      {/* ─── Catch-all ─── */}
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+        {/* ─── Catch-all ─── */}
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </>
   );
 }
 
 export default function App() {
   return (
     <AuthProvider>
-      <AppRoutes />
+      <NotificationProvider>
+        <AppRoutes />
+      </NotificationProvider>
     </AuthProvider>
   );
 }
