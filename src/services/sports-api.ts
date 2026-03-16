@@ -1,37 +1,33 @@
-// ─── Service unifié : API-Football (principal) → ESPN (secours) ───
+// ─── Service unifié : football-data.org (principal) + ESPN (autres sports) ───
 
 import type { Sport, Match } from '../types';
-import { cachedFetch, getApiFootballUsage } from './api-cache';
+import { cachedFetch } from './api-cache';
 import {
-  getTodayFixtures,
-  getLiveFixtures,
-  getUpcomingFixtures,
-  mapApiStatus,
-  LEAGUE_IDS,
-  type ApiFixture,
-} from './api-football';
+  getTodayMatches,
+  getUpcomingCompetitionMatches,
+  type NormalizedFdMatch,
+} from './football-data';
 import { getEspnMatches, getAllEspnFootball, type NormalizedMatch } from './espn';
 import { getWorldCupMatches, type NormalizedWorldCupMatch } from './balldontlie';
 import { calculateOdds } from './odds';
 import { upsertMatch } from './matches';
 
-// ─── Convertir un fixture API-Football en Match ───
-function apiFixtureToMatch(fixture: ApiFixture): Omit<Match, 'id'> {
-  const status = mapApiStatus(fixture.fixture.status.short);
+// ─── Convertir un match football-data.org en Match ───
+function fdMatchToMatch(m: NormalizedFdMatch): Omit<Match, 'id'> {
   return {
     sport: 'football' as Sport,
-    league: fixture.league.name,
-    homeTeam: fixture.teams.home.name,
-    awayTeam: fixture.teams.away.name,
-    homeLogo: fixture.teams.home.logo,
-    awayLogo: fixture.teams.away.logo,
-    homeScore: fixture.goals.home,
-    awayScore: fixture.goals.away,
-    status,
-    startTime: new Date(fixture.fixture.date),
-    apiMatchId: fixture.fixture.id,
-    odds: calculateOdds(fixture.teams.home.name, fixture.teams.away.name, 'football'),
-    apiSource: 'api-football',
+    league: m.league,
+    homeTeam: m.homeTeam,
+    awayTeam: m.awayTeam,
+    homeLogo: m.homeLogo,
+    awayLogo: m.awayLogo,
+    homeScore: m.homeScore,
+    awayScore: m.awayScore,
+    status: m.status,
+    startTime: m.startTime,
+    apiMatchId: m.apiMatchId,
+    odds: calculateOdds(m.homeTeam, m.awayTeam, 'football'),
+    apiSource: 'football-data',
   };
 }
 
@@ -107,30 +103,25 @@ export async function fetchTodayMatches(sport?: Sport): Promise<Omit<Match, 'id'
   const cacheKey = `today_${sport || 'all'}_${new Date().toISOString().split('T')[0]}`;
 
   return cachedFetch(cacheKey, 'fixtures_today', async () => {
-    const { remaining } = await getApiFootballUsage();
     let matches: Omit<Match, 'id'>[] = [];
 
     if (sport === 'football' || !sport) {
-      // Tenter API-Football d'abord
-      if (remaining > 10) {
+      // football-data.org pour le football (gratuit, 10 req/min)
+      try {
+        const fdMatches = await getTodayMatches();
+        matches.push(...fdMatches.map(fdMatchToMatch));
+      } catch {
+        // Fallback ESPN si football-data.org échoue
         try {
-          const fixtures = await getTodayFixtures();
-          matches.push(...fixtures.map(apiFixtureToMatch));
-        } catch (err) {
-          // Fallback ESPN si API-Football échoue
-          if (err instanceof Error && err.message === 'API_FOOTBALL_QUOTA_EXCEEDED') {
-            const espnMatches = await getAllEspnFootball();
-            matches.push(...espnMatches.map(espnToMatch));
-          }
+          const espnMatches = await getAllEspnFootball();
+          matches.push(...espnMatches.map(espnToMatch));
+        } catch {
+          // Les deux APIs ont échoué, on continue avec Firestore
         }
-      } else {
-        // Quota bas, utiliser ESPN directement
-        const espnMatches = await getAllEspnFootball();
-        matches.push(...espnMatches.map(espnToMatch));
       }
     }
 
-    // Sports non-football : toujours ESPN
+    // Sports non-football : ESPN
     if (sport && sport !== 'football') {
       const espnMatches = await getEspnMatches(sport);
       matches.push(...espnMatches.map(espnToMatch));
@@ -154,22 +145,20 @@ export async function fetchTodayMatches(sport?: Sport): Promise<Omit<Match, 'id'
   });
 }
 
-// ─── Matchs live (pas de cache long) ───
+// ─── Matchs live ───
 export async function fetchLiveMatches(): Promise<Omit<Match, 'id'>[]> {
   const cacheKey = `live_${Date.now().toString().slice(0, -4)}`; // cache ~10s
 
   return cachedFetch(cacheKey, 'fixtures_live', async () => {
-    const { remaining } = await getApiFootballUsage();
     let matches: Omit<Match, 'id'>[] = [];
 
-    // API-Football pour les matchs live football
-    if (remaining > 5) {
-      try {
-        const fixtures = await getLiveFixtures();
-        matches.push(...fixtures.map(apiFixtureToMatch));
-      } catch {
-        // Fallback: on récupère depuis Firestore (déjà synced)
-      }
+    // football-data.org pour les matchs live football
+    try {
+      const fdMatches = await getTodayMatches();
+      const liveOnly = fdMatches.filter(m => m.status === 'live');
+      matches.push(...liveOnly.map(fdMatchToMatch));
+    } catch {
+      // Fallback: on récupère depuis Firestore (déjà synced)
     }
 
     // ESPN pour les autres sports
@@ -193,24 +182,19 @@ export async function fetchLiveMatches(): Promise<Omit<Match, 'id'>[]> {
   });
 }
 
-// ─── Matchs à venir par ligue (API-Football) ───
-export async function fetchUpcomingByLeague(leagueId: number, count: number = 10): Promise<Omit<Match, 'id'>[]> {
-  const cacheKey = `upcoming_${leagueId}_${count}`;
+// ─── Matchs à venir par compétition (football-data.org) ───
+export async function fetchUpcomingByCompetition(competitionCode: string): Promise<Omit<Match, 'id'>[]> {
+  const cacheKey = `upcoming_${competitionCode}`;
 
   return cachedFetch(cacheKey, 'fixtures_upcoming', async () => {
-    const { remaining } = await getApiFootballUsage();
-
-    if (remaining > 10) {
-      try {
-        const fixtures = await getUpcomingFixtures(leagueId, count);
-        const matches = fixtures.map(apiFixtureToMatch);
-        syncToFirestore(matches).catch(() => {});
-        return matches;
-      } catch {
-        return [];
-      }
+    try {
+      const fdMatches = await getUpcomingCompetitionMatches(competitionCode);
+      const matches = fdMatches.map(fdMatchToMatch);
+      syncToFirestore(matches).catch(() => {});
+      return matches;
+    } catch {
+      return [];
     }
-    return [];
   });
 }
 
@@ -226,21 +210,18 @@ export async function fetchWorldCupMatches(): Promise<Omit<Match, 'id'>[]> {
   });
 }
 
-// ─── Infos API usage (pour le dashboard) ───
-export { getApiFootballUsage };
-
 // ─── Leagues par sport ───
-export const LEAGUES_BY_SPORT: Record<Sport, { id: number; name: string }[]> = {
+export const LEAGUES_BY_SPORT: Record<Sport, { code: string; name: string }[]> = {
   football: [
-    { id: LEAGUE_IDS.LIGUE_1, name: 'Ligue 1' },
-    { id: LEAGUE_IDS.PREMIER_LEAGUE, name: 'Premier League' },
-    { id: LEAGUE_IDS.LA_LIGA, name: 'La Liga' },
-    { id: LEAGUE_IDS.SERIE_A, name: 'Serie A' },
-    { id: LEAGUE_IDS.BUNDESLIGA, name: 'Bundesliga' },
-    { id: LEAGUE_IDS.CHAMPIONS_LEAGUE, name: 'Champions League' },
-    { id: LEAGUE_IDS.WORLD_CUP, name: 'Coupe du Monde 2026' },
+    { code: 'FL1', name: 'Ligue 1' },
+    { code: 'PL', name: 'Premier League' },
+    { code: 'PD', name: 'La Liga' },
+    { code: 'SA', name: 'Serie A' },
+    { code: 'BL1', name: 'Bundesliga' },
+    { code: 'CL', name: 'Champions League' },
+    { code: 'WC', name: 'Coupe du Monde' },
   ],
-  basketball: [{ id: LEAGUE_IDS.NBA, name: 'NBA' }],
-  nfl: [{ id: LEAGUE_IDS.NFL, name: 'NFL' }],
-  rugby: [{ id: 0, name: 'Rugby' }],
+  basketball: [{ code: 'NBA', name: 'NBA' }],
+  nfl: [{ code: 'NFL', name: 'NFL' }],
+  rugby: [{ code: 'RUGBY', name: 'Rugby' }],
 };

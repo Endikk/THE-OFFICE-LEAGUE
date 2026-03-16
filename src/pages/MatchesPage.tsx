@@ -7,7 +7,7 @@ import { useAuth } from '../context/AuthContext';
 import { getUpcomingMatches, getLiveMatches, getFinishedMatches } from '../services/matches';
 import { getMatchBets } from '../services/bets';
 import { getOfficeMembers } from '../services/office';
-import { fetchTodayMatches, getApiFootballUsage } from '../services/sports-api';
+import { fetchTodayMatches } from '../services/sports-api';
 import type { Match, Bet, BetPrediction, Sport, User } from '../types';
 
 // ─── Config des sports ───
@@ -39,7 +39,6 @@ export default function MatchesPage() {
   const [betMatch, setBetMatch] = useState<{ match: Match; prediction?: BetPrediction } | null>(null);
   const [officeBets, setOfficeBets] = useState<Record<string, Bet[]>>({});
   const [officeMembers, setOfficeMembers] = useState<Pick<User, 'uid' | 'displayName' | 'photoURL'>[]>([]);
-  const [apiUsage, setApiUsage] = useState({ count: 0, remaining: 100 });
   const [lastRefresh, setLastRefresh] = useState<Date | null>(null);
   const [liveCount, setLiveCount] = useState(0);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -94,8 +93,6 @@ export default function MatchesPage() {
         setOfficeBets(betsMap);
       }
 
-      const usage = await getApiFootballUsage();
-      setApiUsage(usage);
       setLastRefresh(new Date());
     } catch (err) {
       console.error('Erreur chargement matchs:', err);
@@ -138,10 +135,6 @@ export default function MatchesPage() {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <div className="hidden sm:flex items-center gap-1.5 text-xs text-office-brown/40">
-            <div className={`w-2 h-2 rounded-full ${apiUsage.remaining > 20 ? 'bg-office-green' : apiUsage.remaining > 5 ? 'bg-office-mustard' : 'bg-office-red'}`} />
-            API: {apiUsage.remaining}/100
-          </div>
           <button
             onClick={() => loadMatches(false)}
             disabled={refreshing}

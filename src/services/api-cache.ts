@@ -87,47 +87,5 @@ export async function cachedFetch<T>(
   return data;
 }
 
-// ─── Compteur de requêtes API-Football (100/jour max) ───
-const COUNTER_DOC = 'api_football_daily_counter';
-
-interface DailyCounter {
-  date: string;
-  count: number;
-}
-
-export async function getApiFootballUsage(): Promise<{ count: number; remaining: number }> {
-  const today = new Date().toISOString().split('T')[0];
-  try {
-    const snap = await getDoc(doc(db, CACHE_COLLECTION, COUNTER_DOC));
-    if (!snap.exists()) return { count: 0, remaining: 100 };
-    const data = snap.data() as DailyCounter;
-    if (data.date !== today) return { count: 0, remaining: 100 };
-    return { count: data.count, remaining: Math.max(0, 100 - data.count) };
-  } catch {
-    return { count: 0, remaining: 100 };
-  }
-}
-
-export async function incrementApiFootballCounter(): Promise<boolean> {
-  const today = new Date().toISOString().split('T')[0];
-  try {
-    const ref = doc(db, CACHE_COLLECTION, COUNTER_DOC);
-    const snap = await getDoc(ref);
-
-    let current = 0;
-    if (snap.exists()) {
-      const data = snap.data() as DailyCounter;
-      current = data.date === today ? data.count : 0;
-    }
-
-    if (current >= 100) return false; // Quota épuisé
-
-    await setDoc(ref, { date: today, count: current + 1 });
-    return true;
-  } catch {
-    return true; // En cas d'erreur, on laisse passer
-  }
-}
-
 export { CACHE_DURATIONS };
 export type { CacheContext };

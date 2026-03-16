@@ -9,7 +9,7 @@ Plateforme de paris sportifs virtuels et de votes entre collegues, inspiree de *
 |--------|-------------|
 | Frontend | React (Vite) + TypeScript + Tailwind CSS |
 | Backend/DB | Firebase (Firestore + Auth + Hosting) - plan gratuit |
-| API sportive | API-Football (api-football.com) - plan gratuit (100 req/jour) |
+| API sportive | football-data.org - 100% gratuit (10 req/min, 12 competitions) |
 | Deploiement | Firebase Hosting (gratuit) |
 | Icones | Lucide React |
 
@@ -40,7 +40,7 @@ src/
 ├── context/
 │   └── AuthContext.tsx       # Provider d'authentification
 ├── hooks/
-│   └── useMatches.ts        # Hook pour les matchs API-Football
+│   └── useMatches.ts        # Hook pour les matchs football-data.org
 ├── pages/
 │   ├── AwardsPage.tsx       # Page Dundie Awards
 │   ├── Dashboard.tsx        # Page d'accueil
@@ -48,7 +48,7 @@ src/
 │   ├── MatchesPage.tsx      # Liste des matchs + paris
 │   └── PollsPage.tsx        # Sondages du bureau
 ├── services/
-│   ├── api-football.ts      # Client API-Football
+│   ├── football-data.ts     # Client football-data.org v4
 │   ├── auth.ts              # Authentification Firebase
 │   ├── bets.ts              # CRUD paris
 │   ├── firebase.ts          # Configuration Firebase
@@ -84,7 +84,7 @@ npm install
 
 # 3. Configurer les variables d'environnement
 cp .env.example .env
-# Remplir avec tes cles Firebase et API-Football
+# Remplir avec tes cles Firebase et football-data.org
 
 # 4. Lancer le serveur de dev
 npm run dev
@@ -99,7 +99,7 @@ npm run dev
 - [x] Creation/rejoindre un bureau (code d'invitation)
 - [x] Structure des composants et routing
 - [ ] Dashboard utilisateur avec stats
-- [ ] Integration API-Football (matchs du jour)
+- [ ] Integration football-data.org (matchs du jour)
 
 ### Phase 2 : Fonctionnalites Core (Semaine 3-4)
 - [ ] Systeme de paris complet (placer, resoudre, historique)

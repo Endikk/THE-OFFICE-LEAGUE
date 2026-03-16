@@ -59,9 +59,9 @@ export interface Match {
   awayScore: number | null;
   status: MatchStatus;
   startTime: FirestoreDate;
-  apiMatchId: number;           // ID API-Football ou hash ESPN
+  apiMatchId: number;           // ID football-data.org, hash ESPN ou BDL
   odds: MatchOdds;
-  apiSource?: 'api-football' | 'espn' | 'balldontlie';
+  apiSource?: 'football-data' | 'espn' | 'balldontlie';
   isWorldCup?: boolean;
   worldCupGroup?: string;       // "A", "B", etc.
   worldCupStage?: WorldCupStage;

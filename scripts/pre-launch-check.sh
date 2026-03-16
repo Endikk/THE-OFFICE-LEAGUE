@@ -39,7 +39,7 @@ if [ -f ".env" ]; then
   grep -q "VITE_FIREBASE_API_KEY=." .env 2>/dev/null && pass "VITE_FIREBASE_API_KEY défini" || fail "VITE_FIREBASE_API_KEY vide"
   grep -q "VITE_FIREBASE_PROJECT_ID=." .env 2>/dev/null && pass "VITE_FIREBASE_PROJECT_ID défini" || fail "VITE_FIREBASE_PROJECT_ID vide"
   grep -q "VITE_FIREBASE_AUTH_DOMAIN=." .env 2>/dev/null && pass "VITE_FIREBASE_AUTH_DOMAIN défini" || fail "VITE_FIREBASE_AUTH_DOMAIN vide"
-  grep -q "VITE_API_FOOTBALL_KEY=." .env 2>/dev/null && pass "VITE_API_FOOTBALL_KEY défini" || warn "VITE_API_FOOTBALL_KEY vide (matchs ne fonctionneront pas)"
+  grep -q "VITE_FOOTBALL_DATA_TOKEN=." .env 2>/dev/null && pass "VITE_FOOTBALL_DATA_TOKEN défini" || warn "VITE_FOOTBALL_DATA_TOKEN vide (matchs ne fonctionneront pas)"
 else
   fail "Impossible de vérifier les variables (.env manquant)"
 fi

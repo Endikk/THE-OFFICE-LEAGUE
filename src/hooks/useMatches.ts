@@ -1,32 +1,32 @@
 import { useState, useEffect } from 'react';
-import { getTodayFixtures, getUpcomingFixtures, type ApiFixture } from '../services/api-football';
+import { getTodayMatches, getUpcomingCompetitionMatches, type NormalizedFdMatch } from '../services/football-data';
 
-export function useTodayMatches(leagueId?: number) {
-  const [matches, setMatches] = useState<ApiFixture[]>([]);
+export function useTodayMatches() {
+  const [matches, setMatches] = useState<NormalizedFdMatch[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    getTodayFixtures(leagueId)
+    getTodayMatches()
       .then(setMatches)
       .catch(e => setError(e.message))
       .finally(() => setLoading(false));
-  }, [leagueId]);
+  }, []);
 
   return { matches, loading, error };
 }
 
-export function useUpcomingMatches(leagueId: number, count: number = 10) {
-  const [matches, setMatches] = useState<ApiFixture[]>([]);
+export function useUpcomingMatches(competitionCode: string) {
+  const [matches, setMatches] = useState<NormalizedFdMatch[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    getUpcomingFixtures(leagueId, count)
+    getUpcomingCompetitionMatches(competitionCode)
       .then(setMatches)
       .catch(e => setError(e.message))
       .finally(() => setLoading(false));
-  }, [leagueId, count]);
+  }, [competitionCode]);
 
   return { matches, loading, error };
 }

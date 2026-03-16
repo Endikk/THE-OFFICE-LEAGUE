@@ -26,7 +26,7 @@ export async function upsertMatch(data: {
   awayScore?: number | null;
   homeLogo?: string;
   awayLogo?: string;
-  apiSource?: 'api-football' | 'espn' | 'balldontlie';
+  apiSource?: 'football-data' | 'espn' | 'balldontlie';
   isWorldCup?: boolean;
   worldCupGroup?: string;
   worldCupStage?: WorldCupStage;

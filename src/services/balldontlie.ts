@@ -97,7 +97,7 @@ export interface NormalizedWorldCupMatch {
 
 function normalizeMatch(m: BdlMatch): NormalizedWorldCupMatch {
   return {
-    apiMatchId: m.id + 900000, // offset pour éviter les collisions avec API-Football
+    apiMatchId: m.id + 900000, // offset pour éviter les collisions avec football-data.org
     homeTeam: m.home_team.name,
     awayTeam: m.away_team.name,
     homeLogo: m.home_team.flag,
