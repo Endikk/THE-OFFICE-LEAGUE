@@ -27,6 +27,7 @@ import PollsPage from './pages/PollsPage';
 import AwardsPage from './pages/AwardsPage';
 import OfficeDashboard from './pages/OfficeDashboard';
 import WorldCupPage from './pages/WorldCupPage';
+import AdminPage from './pages/AdminPage';
 
 // ─── Layout avec Navbar + listener de matchs ───
 function AppLayout({ children }: { children: React.ReactNode }) {
@@ -115,6 +116,11 @@ function AppRoutes() {
         <Route path="/office" element={
           <ProtectedRoute requireOffice>
             <AppLayout><OfficeDashboard /></AppLayout>
+          </ProtectedRoute>
+        } />
+        <Route path="/admin" element={
+          <ProtectedRoute requireOffice>
+            <AppLayout><AdminPage /></AppLayout>
           </ProtectedRoute>
         } />
 

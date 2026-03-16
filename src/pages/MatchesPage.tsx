@@ -7,17 +7,7 @@ import { useAuth } from '../context/AuthContext';
 import { getUpcomingMatches, getLiveMatches, getFinishedMatches } from '../services/matches';
 import { getMatchBets } from '../services/bets';
 import { getOfficeMembers } from '../services/office';
-import { fetchTodayMatches } from '../services/sports-api';
-import type { Match, Bet, BetPrediction, Sport, User } from '../types';
-
-// ─── Config des sports ───
-const SPORTS: { key: Sport | 'all'; emoji: string; label: string }[] = [
-  { key: 'all', emoji: '🔥', label: 'Tous' },
-  { key: 'football', emoji: '⚽', label: 'Football' },
-  { key: 'basketball', emoji: '🏀', label: 'NBA' },
-  { key: 'nfl', emoji: '🏈', label: 'NFL' },
-  { key: 'rugby', emoji: '🏉', label: 'Rugby' },
-];
+import type { Match, Bet, BetPrediction, User } from '../types';
 
 type TabKey = 'live' | 'upcoming' | 'finished';
 
@@ -31,7 +21,6 @@ const REFRESH_INTERVAL = 60_000;
 
 export default function MatchesPage() {
   const { userData } = useAuth();
-  const [selectedSport, setSelectedSport] = useState<Sport | 'all'>('all');
   const [activeTab, setActiveTab] = useState<TabKey>('upcoming');
   const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
@@ -43,7 +32,7 @@ export default function MatchesPage() {
   const [liveCount, setLiveCount] = useState(0);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // ─── Charger les membres du bureau ───
+  // Load office members
   useEffect(() => {
     if (!userData?.officeId) return;
     getOfficeMembers(userData.officeId).then(members => {
@@ -51,37 +40,27 @@ export default function MatchesPage() {
     }).catch(() => {});
   }, [userData?.officeId]);
 
-  // ─── Charger les matchs ───
+  // Load matches from Firestore
   const loadMatches = useCallback(async (showLoading = true) => {
     if (showLoading) setLoading(true);
     else setRefreshing(true);
 
     try {
-      const sport = selectedSport === 'all' ? undefined : selectedSport;
-
-      // Fetch depuis les APIs externes (cache intelligent)
-      try { await fetchTodayMatches(sport); } catch { /* continue with Firestore */ }
-
-      // Lire depuis Firestore
       let result: Match[] = [];
       if (activeTab === 'live') {
         result = await getLiveMatches();
-        if (sport) result = result.filter(m => m.sport === sport);
       } else if (activeTab === 'upcoming') {
         result = await getUpcomingMatches();
-        if (sport) result = result.filter(m => m.sport === sport);
       } else {
-        result = await getFinishedMatches(undefined, 30);
-        if (sport) result = result.filter(m => m.sport === sport);
+        result = await getFinishedMatches(30);
       }
-
       setMatches(result);
 
-      // Compter les lives
+      // Count live
       const allLive = await getLiveMatches();
       setLiveCount(allLive.length);
 
-      // Charger les paris du bureau
+      // Load office bets
       if (userData?.officeId) {
         const betsMap: Record<string, Bet[]> = {};
         await Promise.allSettled(
@@ -100,7 +79,7 @@ export default function MatchesPage() {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [selectedSport, activeTab, userData?.officeId]);
+  }, [activeTab, userData?.officeId]);
 
   useEffect(() => { loadMatches(true); }, [loadMatches]);
 
@@ -118,7 +97,6 @@ export default function MatchesPage() {
   };
 
   const handleBetSuccess = () => {
-    // Recharger les paris après un nouveau pari
     loadMatches(false);
   };
 
@@ -129,8 +107,9 @@ export default function MatchesPage() {
         <div>
           <h1 className="text-3xl font-bold text-office-navy">Matchs</h1>
           <p className="text-sm text-office-brown/40 mt-1">
+            Coupe du Monde 2026
             {lastRefresh && (
-              <span>Mis a jour a {lastRefresh.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</span>
+              <span className="ml-2">— Mis a jour a {lastRefresh.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</span>
             )}
           </p>
         </div>
@@ -144,24 +123,6 @@ export default function MatchesPage() {
             Rafraichir
           </button>
         </div>
-      </div>
-
-      {/* Sport filters */}
-      <div className="flex gap-2 mb-4 overflow-x-auto pb-2 scrollbar-hide">
-        {SPORTS.map(({ key, emoji, label }) => (
-          <button
-            key={key}
-            onClick={() => setSelectedSport(key)}
-            className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
-              selectedSport === key
-                ? 'bg-office-navy text-white shadow-sm'
-                : 'bg-white text-office-brown/60 hover:bg-office-paper-dark border border-office-paper-dark/60'
-            }`}
-          >
-            <span>{emoji}</span>
-            {label}
-          </button>
-        ))}
       </div>
 
       {/* Status tabs */}

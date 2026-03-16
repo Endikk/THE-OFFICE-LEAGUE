@@ -38,35 +38,9 @@ const FOOTBALL_TIERS: Record<string, number> = {
   'Morocco': 0.75, 'Maroc': 0.75, 'Senegal': 0.70, 'Sénégal': 0.70,
 };
 
-// Tiers NBA
-const NBA_TIERS: Record<string, number> = {
-  'Boston Celtics': 1.0, 'Denver Nuggets': 0.95, 'Milwaukee Bucks': 0.90,
-  'Oklahoma City Thunder': 0.95, 'Cleveland Cavaliers': 0.90,
-  'Philadelphia 76ers': 0.85, 'Phoenix Suns': 0.85,
-  'Golden State Warriors': 0.85, 'LA Lakers': 0.80, 'Los Angeles Lakers': 0.80,
-  'Dallas Mavericks': 0.85, 'Minnesota Timberwolves': 0.85,
-  'Miami Heat': 0.80, 'New York Knicks': 0.80,
-  'LA Clippers': 0.80, 'Los Angeles Clippers': 0.80,
-  'Memphis Grizzlies': 0.75, 'Sacramento Kings': 0.75,
-  'Indiana Pacers': 0.75, 'New Orleans Pelicans': 0.75,
-};
 
-// Tiers NFL
-const NFL_TIERS: Record<string, number> = {
-  'Kansas City Chiefs': 1.0, 'San Francisco 49ers': 0.95,
-  'Baltimore Ravens': 0.95, 'Buffalo Bills': 0.90,
-  'Dallas Cowboys': 0.85, 'Detroit Lions': 0.90,
-  'Philadelphia Eagles': 0.90, 'Miami Dolphins': 0.85,
-  'Cincinnati Bengals': 0.80, 'Green Bay Packers': 0.80,
-  'Houston Texans': 0.80, 'Cleveland Browns': 0.75,
-};
-
-function getTeamStrength(teamName: string, sport: Sport): number {
-  const tiers = sport === 'basketball' ? NBA_TIERS
-    : sport === 'nfl' ? NFL_TIERS
-    : FOOTBALL_TIERS;
-
-  return tiers[teamName] || 0.55; // Défaut : équipe moyenne
+function getTeamStrength(teamName: string, _sport: Sport): number {
+  return FOOTBALL_TIERS[teamName] || 0.55; // Défaut : équipe moyenne
 }
 
 // ─── Calcul des cotes ───
