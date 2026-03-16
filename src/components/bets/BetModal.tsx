@@ -1,28 +1,21 @@
 import { useState } from 'react';
 import { X, Coins } from 'lucide-react';
-import type { ApiFixture } from '../../services/api-football';
+import type { Match, BetPrediction } from '../../types';
 import { useAuth } from '../../context/AuthContext';
 import { placeBet } from '../../services/bets';
 
 interface BetModalProps {
-  fixture: ApiFixture;
+  match: Match;
   onClose: () => void;
 }
 
-type Prediction = 'home' | 'draw' | 'away';
-
-const ODDS: Record<Prediction, number> = {
-  home: 1.8,
-  draw: 3.2,
-  away: 2.5,
-};
-
-export default function BetModal({ fixture, onClose }: BetModalProps) {
+export default function BetModal({ match, onClose }: BetModalProps) {
   const { userData } = useAuth();
-  const [prediction, setPrediction] = useState<Prediction | null>(null);
+  const [prediction, setPrediction] = useState<BetPrediction | null>(null);
   const [amount, setAmount] = useState(50);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [error, setError] = useState('');
 
   if (!userData) return null;
 
@@ -31,28 +24,29 @@ export default function BetModal({ fixture, onClose }: BetModalProps) {
   async function handleBet() {
     if (!prediction || !userData?.officeId) return;
     setLoading(true);
+    setError('');
     try {
       await placeBet(
         userData.uid,
-        fixture.fixture.id.toString(),
+        match.id,
         userData.officeId,
         prediction,
         amount,
-        ODDS[prediction]
+        match.odds[prediction]
       );
       setSuccess(true);
       setTimeout(onClose, 1500);
-    } catch {
-      // handle error
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erreur lors du pari');
     } finally {
       setLoading(false);
     }
   }
 
-  const options: { key: Prediction; label: string }[] = [
-    { key: 'home', label: fixture.teams.home.name },
-    { key: 'draw', label: 'Match Nul' },
-    { key: 'away', label: fixture.teams.away.name },
+  const options: { key: BetPrediction; label: string; odds: number }[] = [
+    { key: 'home', label: match.homeTeam, odds: match.odds.home },
+    { key: 'draw', label: 'Match Nul', odds: match.odds.draw },
+    { key: 'away', label: match.awayTeam, odds: match.odds.away },
   ];
 
   return (
@@ -72,11 +66,17 @@ export default function BetModal({ fixture, onClose }: BetModalProps) {
           <>
             <h3 className="text-lg font-bold mb-1">Placer un pari</h3>
             <p className="text-sm text-gray-500 mb-6">
-              {fixture.teams.home.name} vs {fixture.teams.away.name}
+              {match.homeTeam} vs {match.awayTeam}
             </p>
 
+            {error && (
+              <div className="bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded-lg mb-4 text-sm">
+                {error}
+              </div>
+            )}
+
             <div className="space-y-2 mb-6">
-              {options.map(({ key, label }) => (
+              {options.map(({ key, label, odds }) => (
                 <button
                   key={key}
                   onClick={() => setPrediction(key)}
@@ -87,7 +87,7 @@ export default function BetModal({ fixture, onClose }: BetModalProps) {
                   }`}
                 >
                   <span className="font-medium">{label}</span>
-                  <span className="text-sm text-dunder-gold font-semibold">x{ODDS[key]}</span>
+                  <span className="text-sm text-dunder-gold font-semibold">x{odds.toFixed(2)}</span>
                 </button>
               ))}
             </div>
@@ -118,7 +118,7 @@ export default function BetModal({ fixture, onClose }: BetModalProps) {
               <div className="bg-gray-50 rounded-lg p-3 mb-4 text-sm">
                 Gain potentiel :{' '}
                 <span className="font-bold text-dunder-green">
-                  {Math.round(amount * ODDS[prediction])} OfficeCoins
+                  {Math.round(amount * match.odds[prediction])} OfficeCoins
                 </span>
               </div>
             )}

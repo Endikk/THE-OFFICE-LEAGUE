@@ -1,8 +1,8 @@
 import { Trophy, Medal, Award } from 'lucide-react';
-import type { LeaderboardEntry } from '../../types';
+import type { RankingEntry } from '../../types';
 
 interface LeaderboardTableProps {
-  entries: LeaderboardEntry[];
+  entries: RankingEntry[];
 }
 
 function getRankIcon(rank: number) {
@@ -22,29 +22,39 @@ export default function LeaderboardTable({ entries }: LeaderboardTableProps) {
         </h2>
       </div>
       <div className="divide-y divide-gray-50">
-        {entries.map((entry) => (
-          <div
-            key={entry.userId}
-            className={`flex items-center gap-4 px-6 py-4 ${
-              entry.rank <= 3 ? 'bg-yellow-50/50' : ''
-            }`}
-          >
-            <div className="w-8 flex justify-center">{getRankIcon(entry.rank)}</div>
-            <div className="w-10 h-10 rounded-full bg-dunder-blue/10 flex items-center justify-center text-sm font-bold text-dunder-blue">
-              {entry.displayName.charAt(0).toUpperCase()}
+        {entries.map((entry) => {
+          const total = entry.wins + entry.losses;
+          const winRate = total > 0 ? Math.round((entry.wins / total) * 100) : 0;
+
+          return (
+            <div
+              key={entry.userId}
+              className={`flex items-center gap-4 px-6 py-4 ${
+                entry.rank <= 3 ? 'bg-yellow-50/50' : ''
+              }`}
+            >
+              <div className="w-8 flex justify-center">{getRankIcon(entry.rank)}</div>
+              <div className="w-10 h-10 rounded-full bg-dunder-blue/10 flex items-center justify-center text-sm font-bold text-dunder-blue">
+                {entry.displayName.charAt(0).toUpperCase()}
+              </div>
+              <div className="flex-1">
+                <p className="font-medium">{entry.displayName}</p>
+                <p className="text-xs text-gray-400">
+                  {entry.wins}/{total} paris gagnés ({winRate}%)
+                  {entry.streak !== 0 && (
+                    <span className={entry.streak > 0 ? ' text-dunder-green' : ' text-dunder-red'}>
+                      {' '}| streak {entry.streak > 0 ? '+' : ''}{entry.streak}
+                    </span>
+                  )}
+                </p>
+              </div>
+              <div className="text-right">
+                <p className="font-bold text-dunder-gold">{entry.points}</p>
+                <p className="text-xs text-gray-400">OfficeCoins</p>
+              </div>
             </div>
-            <div className="flex-1">
-              <p className="font-medium">{entry.displayName}</p>
-              <p className="text-xs text-gray-400">
-                {entry.wonBets}/{entry.totalBets} paris gagnés ({Math.round(entry.winRate)}%)
-              </p>
-            </div>
-            <div className="text-right">
-              <p className="font-bold text-dunder-gold">{entry.officeCoins}</p>
-              <p className="text-xs text-gray-400">OfficeCoins</p>
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

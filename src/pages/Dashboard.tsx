@@ -1,4 +1,4 @@
-import { Trophy, TrendingUp, Target, Coins } from 'lucide-react';
+import { Trophy, TrendingUp, Target, Coins, Flame } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 export default function Dashboard() {
@@ -6,25 +6,35 @@ export default function Dashboard() {
 
   if (!userData) return null;
 
+  const totalBets = userData.totalWins + userData.totalLosses;
+  const winRate = totalBets > 0 ? Math.round((userData.totalWins / totalBets) * 100) : 0;
+
   const stats = [
     { label: 'OfficeCoins', value: userData.officeCoins, icon: Coins, color: 'text-dunder-gold' },
-    { label: 'Paris gagnés', value: userData.wonBets, icon: Trophy, color: 'text-dunder-green' },
-    { label: 'Total paris', value: userData.totalBets, icon: Target, color: 'text-dunder-blue' },
-    {
-      label: 'Win Rate',
-      value: userData.totalBets > 0 ? `${Math.round((userData.wonBets / userData.totalBets) * 100)}%` : '-',
-      icon: TrendingUp,
-      color: 'text-purple-500',
-    },
+    { label: 'Victoires', value: userData.totalWins, icon: Trophy, color: 'text-dunder-green' },
+    { label: 'Total paris', value: totalBets, icon: Target, color: 'text-dunder-blue' },
+    { label: 'Win Rate', value: totalBets > 0 ? `${winRate}%` : '-', icon: TrendingUp, color: 'text-purple-500' },
   ];
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900">
-          Salut, {userData.displayName} ! 👋
+          Salut, {userData.displayName} !
         </h1>
-        <p className="text-gray-500 mt-1">Prêt à parier aujourd'hui ?</p>
+        <p className="text-gray-500 mt-1">
+          {userData.streak > 0 && (
+            <span className="text-dunder-green font-medium">
+              <Flame className="w-4 h-4 inline" /> Série de {userData.streak} victoire{userData.streak > 1 ? 's' : ''} !
+            </span>
+          )}
+          {userData.streak < 0 && (
+            <span className="text-dunder-red font-medium">
+              Série de {Math.abs(userData.streak)} défaite{Math.abs(userData.streak) > 1 ? 's' : ''}...
+            </span>
+          )}
+          {userData.streak === 0 && 'Prêt à parier aujourd\'hui ?'}
+        </p>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
@@ -57,18 +67,10 @@ export default function Dashboard() {
 
       {userData.dundieAwards.length > 0 && (
         <div className="mt-8">
-          <h2 className="text-lg font-bold mb-4">Tes Dundie Awards 🏆</h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {userData.dundieAwards.map((award) => (
-              <div
-                key={award.id}
-                className="bg-gradient-to-br from-yellow-50 to-amber-50 rounded-xl border border-yellow-200 p-4 text-center"
-              >
-                <div className="text-3xl mb-2">{award.icon}</div>
-                <p className="font-semibold text-sm">{award.title}</p>
-              </div>
-            ))}
-          </div>
+          <h2 className="text-lg font-bold mb-4">Tes Dundie Awards</h2>
+          <p className="text-gray-400 text-sm">
+            {userData.dundieAwards.length} trophée{userData.dundieAwards.length > 1 ? 's' : ''} gagné{userData.dundieAwards.length > 1 ? 's' : ''}
+          </p>
         </div>
       )}
     </div>
