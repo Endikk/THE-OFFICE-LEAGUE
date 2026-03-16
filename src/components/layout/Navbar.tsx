@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
   Trophy, Home, BarChart3, Vote, Award, LogOut, Coins,
-  Building2, Globe, Target, Menu, X,
+  Building2, Globe, Target, Menu, X, Shield,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import QuoteBanner from '../common/QuoteBanner';
@@ -13,15 +13,18 @@ export default function Navbar() {
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
 
+  const isAdmin = userData?.role === 'admin';
+
   const links = [
     { to: '/', icon: Home, label: 'Accueil' },
+    { to: '/worldcup', icon: Globe, label: 'CDM 2026', highlight: true },
     { to: '/matches', icon: Trophy, label: 'Matchs' },
     { to: '/bets', icon: Target, label: 'Mes paris' },
-    { to: '/worldcup', icon: Globe, label: 'CDM 2026', highlight: true },
     { to: '/leaderboard', icon: BarChart3, label: 'Classement' },
     { to: '/polls', icon: Vote, label: 'Sondages' },
     { to: '/awards', icon: Award, label: 'Dundies' },
     { to: '/office', icon: Building2, label: 'Bureau' },
+    ...(isAdmin ? [{ to: '/admin', icon: Shield, label: 'Admin', highlight: true }] : []),
   ];
 
   const isActive = (path: string) => location.pathname === path;

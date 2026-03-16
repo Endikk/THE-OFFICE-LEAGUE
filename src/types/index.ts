@@ -4,22 +4,22 @@ import type { Timestamp } from 'firebase/firestore';
 export type FirestoreDate = Timestamp | Date;
 
 // ============ SPORTS ============
-export type Sport = 'football' | 'basketball' | 'nfl' | 'rugby';
+export type Sport = 'football';
 
 export const SPORT_CONFIG: Record<Sport, { emoji: string; label: string }> = {
   football: { emoji: '⚽', label: 'Football' },
-  basketball: { emoji: '🏀', label: 'NBA' },
-  nfl: { emoji: '🏈', label: 'NFL' },
-  rugby: { emoji: '🏉', label: 'Rugby' },
 };
 
 // ============ USERS ============
+export type UserRole = 'user' | 'admin';
+
 export interface User {
   uid: string;
   displayName: string;
   email: string;
   photoURL?: string;
   officeId?: string;
+  role: UserRole;               // 'admin' pour le gestionnaire
   officeCoins: number;          // défaut 1000
   totalWins: number;
   totalLosses: number;
@@ -50,21 +50,20 @@ export interface MatchOdds {
 export interface Match {
   id: string;
   sport: Sport;
-  league: string;               // "Ligue 1", "Premier League", etc.
+  league: string;               // "Coupe du Monde 2026"
   homeTeam: string;
   awayTeam: string;
-  homeLogo?: string;
-  awayLogo?: string;
+  homeLogo?: string;            // URL drapeau
+  awayLogo?: string;            // URL drapeau
   homeScore: number | null;
   awayScore: number | null;
   status: MatchStatus;
   startTime: FirestoreDate;
-  apiMatchId: number;           // ID API-Football ou hash ESPN
   odds: MatchOdds;
-  apiSource?: 'api-football' | 'espn' | 'balldontlie';
-  isWorldCup?: boolean;
   worldCupGroup?: string;       // "A", "B", etc.
   worldCupStage?: WorldCupStage;
+  matchday?: number;            // jour de match (1, 2, 3...)
+  createdBy?: string;           // userId admin qui a créé le match
 }
 
 // ============ BETS ============

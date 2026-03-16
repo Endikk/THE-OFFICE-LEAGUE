@@ -8,7 +8,7 @@
 - **npm** >= 9
 - **Firebase CLI** : `npm install -g firebase-tools`
 - Un compte [Firebase](https://console.firebase.google.com)
-- Une cle API [API-Football](https://www.api-football.com/) (plan gratuit = 100 requetes/jour)
+- Un token [football-data.org](https://www.football-data.org/) (100% gratuit, 10 req/min, inscription sans CB)
 
 ---
 
@@ -76,8 +76,8 @@ VITE_FIREBASE_STORAGE_BUCKET=the-office-league.appspot.com
 VITE_FIREBASE_MESSAGING_SENDER_ID=123456789
 VITE_FIREBASE_APP_ID=1:123456789:web:abcdef
 
-# API-Football
-VITE_API_FOOTBALL_KEY=your_api_key_here
+# football-data.org (gratuit, 10 req/min)
+VITE_FOOTBALL_DATA_TOKEN=your_token_here
 ```
 
 ### 2.2 Installer les dependances
@@ -229,7 +229,7 @@ Ou verifier manuellement :
 
 - [ ] **Auth** : Inscription + connexion fonctionnent
 - [ ] **Office** : Creation + join avec code d'invitation
-- [ ] **Matchs** : Affichage des matchs via API-Football
+- [ ] **Matchs** : Affichage des matchs via football-data.org
 - [ ] **Paris** : Placer un pari, voir l'historique
 - [ ] **Sondages** : Creer, voter, voir les resultats
 - [ ] **Leaderboard** : Classement avec titres dynamiques
@@ -300,7 +300,7 @@ firestore/
 ├── matches/{matchId}
 │   ├── homeTeam, awayTeam, league, status
 │   ├── score, odds, startTime
-│   └── apiFootballId
+│   └── apiMatchId
 ├── bets/{betId}
 │   ├── userId, officeId, matchId
 │   ├── prediction, amount, status, payout
@@ -362,7 +362,7 @@ firebase emulators:start --only auth,firestore,hosting
 |----------|----------|
 | `PERMISSION_DENIED` Firestore | Verifier firestore.rules + redeploy |
 | Index manquant (erreur console) | Le lien dans l'erreur cree l'index automatiquement |
-| CORS sur API-Football | Utiliser un proxy ou Cloud Function |
+| CORS sur football-data.org | Utiliser un proxy ou Cloud Function |
 | Build echoue | `rm -rf node_modules && npm install` |
 | Emulateurs ne demarrent pas | `firebase emulators:start --only firestore` |
 | SSL custom domain | Attendre 24-48h apres config DNS |

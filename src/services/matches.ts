@@ -3,60 +3,104 @@ import {
   doc,
   getDoc,
   getDocs,
-  setDoc,
+  addDoc,
   updateDoc,
+  deleteDoc,
   query,
   where,
   orderBy,
+  serverTimestamp,
 } from 'firebase/firestore';
 import { db } from './firebase';
-import type { Match, MatchStatus, MatchOdds, Sport, WorldCupStage } from '../types';
+import type { Match, MatchStatus, MatchOdds, WorldCupStage } from '../types';
 
-// ─── Créer / importer un match (depuis les APIs) ───
-export async function upsertMatch(data: {
-  apiMatchId: number;
-  sport: string;
-  league: string;
+// ─── Créer un match (admin) ───
+export async function createMatch(data: {
   homeTeam: string;
   awayTeam: string;
   startTime: Date;
   odds: MatchOdds;
-  status?: MatchStatus;
-  homeScore?: number | null;
-  awayScore?: number | null;
   homeLogo?: string;
   awayLogo?: string;
-  apiSource?: 'api-football' | 'espn' | 'balldontlie';
-  isWorldCup?: boolean;
   worldCupGroup?: string;
   worldCupStage?: WorldCupStage;
+  matchday?: number;
+  createdBy: string;
 }): Promise<string> {
-  const docId = `api_${data.apiMatchId}`;
-  const matchRef = doc(db, 'matches', docId);
-
-  const matchData: Record<string, unknown> = {
-    sport: data.sport,
-    league: data.league,
+  const matchData = {
+    sport: 'football' as const,
+    league: 'Coupe du Monde 2026',
     homeTeam: data.homeTeam,
     awayTeam: data.awayTeam,
-    homeScore: data.homeScore ?? null,
-    awayScore: data.awayScore ?? null,
-    status: data.status || 'upcoming',
+    homeScore: null,
+    awayScore: null,
+    status: 'upcoming' as MatchStatus,
     startTime: data.startTime,
-    apiMatchId: data.apiMatchId,
     odds: data.odds,
+    homeLogo: data.homeLogo || null,
+    awayLogo: data.awayLogo || null,
+    worldCupGroup: data.worldCupGroup || null,
+    worldCupStage: data.worldCupStage || 'group',
+    matchday: data.matchday || null,
+    createdBy: data.createdBy,
+    createdAt: serverTimestamp(),
   };
 
-  // Champs optionnels
-  if (data.homeLogo) matchData.homeLogo = data.homeLogo;
-  if (data.awayLogo) matchData.awayLogo = data.awayLogo;
-  if (data.apiSource) matchData.apiSource = data.apiSource;
-  if (data.isWorldCup) matchData.isWorldCup = true;
-  if (data.worldCupGroup) matchData.worldCupGroup = data.worldCupGroup;
-  if (data.worldCupStage) matchData.worldCupStage = data.worldCupStage;
+  const docRef = await addDoc(collection(db, 'matches'), matchData);
+  return docRef.id;
+}
 
-  await setDoc(matchRef, matchData, { merge: true });
-  return docId;
+// ─── Mettre à jour un match (admin) ───
+export async function updateMatch(matchId: string, data: Partial<{
+  homeTeam: string;
+  awayTeam: string;
+  homeScore: number | null;
+  awayScore: number | null;
+  status: MatchStatus;
+  startTime: Date;
+  odds: MatchOdds;
+  homeLogo: string;
+  awayLogo: string;
+  worldCupGroup: string;
+  worldCupStage: WorldCupStage;
+  matchday: number;
+}>): Promise<void> {
+  await updateDoc(doc(db, 'matches', matchId), data);
+}
+
+// ─── Supprimer un match (admin) ───
+export async function deleteMatch(matchId: string): Promise<void> {
+  await deleteDoc(doc(db, 'matches', matchId));
+}
+
+// ─── Passer un match en live (admin) ───
+export async function startMatch(matchId: string): Promise<void> {
+  await updateDoc(doc(db, 'matches', matchId), {
+    status: 'live',
+    homeScore: 0,
+    awayScore: 0,
+  });
+}
+
+// ─── Mettre à jour le score (admin) ───
+export async function updateMatchScore(
+  matchId: string,
+  homeScore: number,
+  awayScore: number,
+  status?: MatchStatus
+): Promise<void> {
+  const data: Record<string, unknown> = { homeScore, awayScore };
+  if (status) data.status = status;
+  await updateDoc(doc(db, 'matches', matchId), data);
+}
+
+// ─── Terminer un match (admin) ───
+export async function finishMatch(matchId: string, homeScore: number, awayScore: number): Promise<void> {
+  await updateDoc(doc(db, 'matches', matchId), {
+    status: 'finished',
+    homeScore,
+    awayScore,
+  });
 }
 
 // ─── Récupérer un match par ID ───
@@ -66,38 +110,21 @@ export async function getMatch(matchId: string): Promise<Match | null> {
   return { id: snap.id, ...snap.data() } as Match;
 }
 
-// ─── Récupérer un match par apiMatchId ───
-export async function getMatchByApiId(apiMatchId: number): Promise<Match | null> {
-  return getMatch(`api_${apiMatchId}`);
-}
-
-// ─── Matchs à venir ───
-export async function getUpcomingMatches(league?: string): Promise<Match[]> {
-  let q;
-  if (league) {
-    q = query(
-      collection(db, 'matches'),
-      where('status', '==', 'upcoming'),
-      where('league', '==', league),
-      orderBy('startTime', 'asc')
-    );
-  } else {
-    q = query(
-      collection(db, 'matches'),
-      where('status', '==', 'upcoming'),
-      orderBy('startTime', 'asc')
-    );
-  }
+// ─── Tous les matchs ───
+export async function getAllMatches(): Promise<Match[]> {
+  const q = query(
+    collection(db, 'matches'),
+    orderBy('startTime', 'asc')
+  );
   const snapshot = await getDocs(q);
   return snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Match));
 }
 
-// ─── Matchs par sport ───
-export async function getMatchesBySport(sport: Sport): Promise<Match[]> {
+// ─── Matchs à venir ───
+export async function getUpcomingMatches(): Promise<Match[]> {
   const q = query(
     collection(db, 'matches'),
-    where('sport', '==', sport),
-    where('status', 'in', ['upcoming', 'live']),
+    where('status', '==', 'upcoming'),
     orderBy('startTime', 'asc')
   );
   const snapshot = await getDocs(q);
@@ -116,49 +143,36 @@ export async function getLiveMatches(): Promise<Match[]> {
 }
 
 // ─── Matchs terminés ───
-export async function getFinishedMatches(league?: string, limitCount: number = 20): Promise<Match[]> {
-  let q;
-  if (league) {
-    q = query(
-      collection(db, 'matches'),
-      where('status', '==', 'finished'),
-      where('league', '==', league),
-      orderBy('startTime', 'desc')
-    );
-  } else {
-    q = query(
-      collection(db, 'matches'),
-      where('status', '==', 'finished'),
-      orderBy('startTime', 'desc')
-    );
-  }
+export async function getFinishedMatches(limitCount: number = 30): Promise<Match[]> {
+  const q = query(
+    collection(db, 'matches'),
+    where('status', '==', 'finished'),
+    orderBy('startTime', 'desc')
+  );
   const snapshot = await getDocs(q);
   return snapshot.docs.slice(0, limitCount).map(d => ({ id: d.id, ...d.data() } as Match));
 }
 
-// ─── Matchs Coupe du Monde ───
-export async function getWorldCupMatches(): Promise<Match[]> {
+// ─── Matchs par groupe ───
+export async function getMatchesByGroup(group: string): Promise<Match[]> {
   const q = query(
     collection(db, 'matches'),
-    where('isWorldCup', '==', true),
+    where('worldCupGroup', '==', group),
     orderBy('startTime', 'asc')
   );
   const snapshot = await getDocs(q);
   return snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Match));
 }
 
-// ─── Mettre à jour le score / statut d'un match ───
-export async function updateMatchScore(
-  matchId: string,
-  homeScore: number,
-  awayScore: number,
-  status: MatchStatus
-): Promise<void> {
-  await updateDoc(doc(db, 'matches', matchId), {
-    homeScore,
-    awayScore,
-    status,
-  });
+// ─── Matchs par phase ───
+export async function getMatchesByStage(stage: WorldCupStage): Promise<Match[]> {
+  const q = query(
+    collection(db, 'matches'),
+    where('worldCupStage', '==', stage),
+    orderBy('startTime', 'asc')
+  );
+  const snapshot = await getDocs(q);
+  return snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Match));
 }
 
 // ─── Déterminer le résultat d'un match (pour résolution des paris) ───

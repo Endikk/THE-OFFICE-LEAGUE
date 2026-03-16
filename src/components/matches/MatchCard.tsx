@@ -27,9 +27,6 @@ function getStatusClasses(status: Match['status']): string {
 function getSportEmoji(sport: Sport): string {
   const map: Record<Sport, string> = {
     football: '⚽',
-    basketball: '🏀',
-    nfl: '🏈',
-    rugby: '🏉',
   };
   return map[sport] || '⚽';
 }
@@ -108,7 +105,7 @@ export default function MatchCard({ match, officeBets = [], officeMembers = [], 
         <div className="flex items-center gap-2">
           <span className="text-sm">{getSportEmoji(match.sport)}</span>
           <span className="text-xs font-medium text-office-navy/70">{match.league}</span>
-          {match.isWorldCup && (
+          {match.worldCupStage && (
             <span className="text-xs bg-office-mustard/20 text-office-mustard px-1.5 py-0.5 rounded font-bold">WC</span>
           )}
         </div>

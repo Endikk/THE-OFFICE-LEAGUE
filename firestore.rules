@@ -9,6 +9,10 @@ service cloud.firestore {
     function isOwner(userId) {
       return isAuth() && request.auth.uid == userId;
     }
+    function isAdmin() {
+      return isAuth()
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
     function belongsToOffice(officeId) {
       return isAuth()
         && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.officeId == officeId;
@@ -18,7 +22,8 @@ service cloud.firestore {
     match /users/{userId} {
       allow read: if isAuth();
       allow create: if isOwner(userId);
-      allow update: if isOwner(userId);
+      // Owner peut modifier son profil, admin peut promouvoir
+      allow update: if isOwner(userId) || isAdmin();
       allow delete: if false;
     }
 
@@ -32,13 +37,13 @@ service cloud.firestore {
       allow delete: if false;
     }
 
-    // ─── MATCHES ───
+    // ─── MATCHES (admin gère les matchs) ───
     match /matches/{matchId} {
       allow read: if isAuth();
-      // Écriture client pour mise à jour des scores en temps réel
-      allow create: if false;
-      allow update: if isAuth();
-      allow delete: if false;
+      // Seul l'admin peut créer, modifier et supprimer les matchs
+      allow create: if isAdmin();
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
     }
 
     // ─── BETS ───
@@ -50,9 +55,9 @@ service cloud.firestore {
         && belongsToOffice(request.resource.data.officeId)
         && request.resource.data.status == 'pending'
         && request.resource.data.amount > 0;
-      // Résolution client : seul un membre de l'office peut résoudre
-      allow update: if isAuth()
-        && belongsToOffice(resource.data.officeId);
+      // Résolution : admin ou membre de l'office
+      allow update: if isAdmin()
+        || (isAuth() && belongsToOffice(resource.data.officeId));
       allow delete: if false;
     }
 
@@ -75,7 +80,6 @@ service cloud.firestore {
 
       match /rankings/{userId} {
         allow read: if belongsToOffice(officeId);
-        // Membres de l'office peuvent mettre à jour le leaderboard
         allow write: if belongsToOffice(officeId);
       }
     }
@@ -84,7 +88,6 @@ service cloud.firestore {
     match /dundieAwards/{awardId} {
       allow read: if isAuth()
         && belongsToOffice(resource.data.officeId);
-      // Membres de l'office peuvent créer des awards (auto-attribués)
       allow create: if isAuth()
         && belongsToOffice(request.resource.data.officeId);
       allow update: if isAuth()
@@ -94,21 +97,12 @@ service cloud.firestore {
 
     // ─── NOTIFICATIONS ───
     match /notifications/{notifId} {
-      // Un user ne peut lire que ses propres notifications
       allow read: if isAuth()
         && resource.data.userId == request.auth.uid;
-      // Tout user auth peut créer une notification (pour notifier d'autres membres)
       allow create: if isAuth();
-      // Seul le destinataire peut marquer comme lu
       allow update: if isAuth()
         && resource.data.userId == request.auth.uid;
       allow delete: if false;
-    }
-
-    // ─── API CACHE (pour stocker les résultats API-Football) ───
-    match /apiCache/{cacheId} {
-      allow read: if isAuth();
-      allow write: if isAuth();
     }
   }
 }

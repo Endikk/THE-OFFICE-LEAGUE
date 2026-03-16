@@ -5,17 +5,15 @@ import MatchCard from '../components/matches/MatchCard';
 import BetModal from '../components/bets/BetModal';
 import GroupStage from '../components/worldcup/GroupStage';
 import Bracket from '../components/worldcup/Bracket';
-import { getWorldCupMatches } from '../services/matches';
-import { fetchWorldCupMatches } from '../services/sports-api';
-import { getWorldCupStandings, WORLD_CUP_2026, isWorldCupActive, isWorldCupSoon } from '../services/balldontlie';
-import type { Match, WorldCupGroupTeam } from '../types';
+import { getAllMatches } from '../services/matches';
+import { WORLD_CUP_2026, isWorldCupActive, isWorldCupSoon } from '../services/worldcup';
+import type { Match } from '../types';
 
 type WCTab = 'matches' | 'groups' | 'bracket';
 
 export default function WorldCupPage() {
   const [activeTab, setActiveTab] = useState<WCTab>('matches');
   const [matches, setMatches] = useState<Match[]>([]);
-  const [groups, setGroups] = useState<{ name: string; teams: WorldCupGroupTeam[] }[]>([]);
   const [loading, setLoading] = useState(true);
   const [betMatch, setBetMatch] = useState<Match | null>(null);
 
@@ -23,17 +21,8 @@ export default function WorldCupPage() {
     async function load() {
       setLoading(true);
       try {
-        // Fetch depuis les APIs
-        await fetchWorldCupMatches().catch(() => {});
-
-        // Charger depuis Firestore
-        const [wcMatches, wcGroups] = await Promise.all([
-          getWorldCupMatches(),
-          getWorldCupStandings(),
-        ]);
-
-        setMatches(wcMatches);
-        setGroups(wcGroups);
+        const allMatches = await getAllMatches();
+        setMatches(allMatches);
       } catch (err) {
         console.error('Erreur World Cup:', err);
       } finally {
@@ -51,6 +40,14 @@ export default function WorldCupPage() {
   const upcomingMatches = matches.filter(m => m.status === 'upcoming');
   const finishedMatches = matches.filter(m => m.status === 'finished');
   const knockoutMatches = matches.filter(m => m.worldCupStage && m.worldCupStage !== 'group');
+
+  // Build groups from matches for GroupStage component
+  const groupsMap = new Map<string, Match[]>();
+  matches.filter(m => m.worldCupGroup).forEach(m => {
+    const key = m.worldCupGroup!;
+    if (!groupsMap.has(key)) groupsMap.set(key, []);
+    groupsMap.get(key)!.push(m);
+  });
 
   // Countdown
   const daysUntil = Math.max(0, Math.ceil((WORLD_CUP_2026.startDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24)));
@@ -198,7 +195,7 @@ export default function WorldCupPage() {
                   <p className="text-4xl mb-3">🏟️</p>
                   <p className="text-office-brown/40 font-medium">Les matchs seront disponibles prochainement</p>
                   <p className="text-xs text-office-brown/30 mt-1">
-                    La Coupe du Monde commence le 11 juin 2026
+                    L'administrateur va bientot ajouter les matchs
                   </p>
                 </div>
               )}
@@ -206,7 +203,7 @@ export default function WorldCupPage() {
           )}
 
           {/* Groups tab */}
-          {activeTab === 'groups' && <GroupStage groups={groups} />}
+          {activeTab === 'groups' && <GroupStage groups={[]} />}
 
           {/* Bracket tab */}
           {activeTab === 'bracket' && <Bracket matches={knockoutMatches} onBet={setBetMatch} />}

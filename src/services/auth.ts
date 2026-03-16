@@ -42,6 +42,7 @@ function newUserData(displayName: string, email: string, photoURL?: string): Omi
     displayName,
     email,
     photoURL,
+    role: 'user',
     officeCoins: INITIAL_COINS,
     totalWins: 0,
     totalLosses: 0,
