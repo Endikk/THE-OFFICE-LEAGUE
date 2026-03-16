@@ -85,6 +85,14 @@ export interface Bet {
 }
 
 // ============ POLLS ============
+export type PollCategory = 'sport' | 'team_building' | 'fun';
+
+export const POLL_CATEGORY_CONFIG: Record<PollCategory, { emoji: string; label: string; color: string }> = {
+  sport: { emoji: '🏆', label: 'Sportif', color: 'text-office-navy' },
+  team_building: { emoji: '🤝', label: 'Team Building', color: 'text-office-green' },
+  fun: { emoji: '🎉', label: 'Fun', color: 'text-office-mustard' },
+};
+
 export interface Poll {
   id: string;
   officeId: string;
@@ -92,6 +100,8 @@ export interface Poll {
   options: string[];            // ["Option A", "Option B", ...]
   votes: Record<string, string>; // userId → choix (valeur = option text)
   createdBy: string;
+  category: PollCategory;
+  emoji?: string;               // emoji personnalisé pour le sondage
   closesAt: FirestoreDate;
   createdAt: FirestoreDate;
 }
