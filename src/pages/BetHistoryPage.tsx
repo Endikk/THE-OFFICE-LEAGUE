@@ -68,8 +68,8 @@ export default function BetHistoryPage() {
     <div className="max-w-4xl mx-auto px-4 py-8">
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-office-navy">Mes paris</h1>
-        <p className="text-sm text-office-brown/40 mt-1">
+        <h1 className="text-2xl font-heading font-bold text-office-navy">Mes paris</h1>
+        <p className="text-sm text-office-brown-light/40 mt-1">
           Historique complet de tes paris
         </p>
       </div>
@@ -81,7 +81,7 @@ export default function BetHistoryPage() {
             <Target className="w-4 h-4 text-office-navy" />
             <span className="text-xs text-office-brown/40">Total</span>
           </div>
-          <p className="text-xl font-bold text-office-navy">{stats.total}</p>
+          <p className="text-xl font-mono font-bold text-office-navy">{stats.total}</p>
           <p className="text-[11px] text-office-brown/30">{stats.pending} en cours</p>
         </div>
         <div className="card p-4">
@@ -89,7 +89,7 @@ export default function BetHistoryPage() {
             <TrendingUp className="w-4 h-4 text-office-green" />
             <span className="text-xs text-office-brown/40">Win Rate</span>
           </div>
-          <p className="text-xl font-bold text-office-green">{winRate}%</p>
+          <p className="text-xl font-mono font-bold text-office-green">{winRate}%</p>
           <p className="text-[11px] text-office-brown/30">{stats.won}W / {stats.lost}L</p>
         </div>
         <div className="card p-4">
@@ -97,7 +97,7 @@ export default function BetHistoryPage() {
             <Coins className="w-4 h-4 text-office-mustard" />
             <span className="text-xs text-office-brown/40">Profit</span>
           </div>
-          <p className={`text-xl font-bold ${profit >= 0 ? 'text-office-green' : 'text-office-red'}`}>
+          <p className={`text-xl font-mono font-bold ${profit >= 0 ? 'text-office-green' : 'text-office-red'}`}>
             {profit >= 0 ? '+' : ''}{profit.toLocaleString()}
           </p>
           <p className="text-[11px] text-office-brown/30">{stats.totalWagered} mises</p>
@@ -107,7 +107,7 @@ export default function BetHistoryPage() {
             <Flame className="w-4 h-4 text-office-mustard" />
             <span className="text-xs text-office-brown/40">Best Win</span>
           </div>
-          <p className="text-xl font-bold text-office-mustard">
+          <p className="text-xl font-mono font-bold text-office-mustard">
             {stats.biggestWin > 0 ? `+${stats.biggestWin}` : '-'}
           </p>
           <p className="text-[11px] text-office-brown/30">Streak : {userData.streak > 0 ? `+${userData.streak}` : userData.streak}</p>
@@ -208,11 +208,11 @@ export default function BetHistoryPage() {
                 {/* Montant */}
                 <div className="text-right flex-shrink-0">
                   {bet.status === 'won' ? (
-                    <p className="text-lg font-bold text-office-green">+{bet.gainedPoints.toLocaleString()}</p>
+                    <p className="text-lg font-mono font-bold text-office-green">+{bet.gainedPoints.toLocaleString()}</p>
                   ) : bet.status === 'lost' ? (
-                    <p className="text-lg font-bold text-office-red">-{bet.amount.toLocaleString()}</p>
+                    <p className="text-lg font-mono font-bold text-office-red">-{bet.amount.toLocaleString()}</p>
                   ) : (
-                    <p className="text-lg font-bold text-office-mustard">{bet.amount.toLocaleString()}</p>
+                    <p className="text-lg font-mono font-bold text-office-mustard">{bet.amount.toLocaleString()}</p>
                   )}
                   <p className="text-[10px] text-office-brown/30">
                     {bet.status === 'pending' ? 'en jeu' : bet.status === 'won' ? 'gagne' : 'perdu'}

@@ -32,7 +32,9 @@ function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen bg-office-paper">
       <Navbar />
-      {children}
+      <main className="pb-20 lg:pb-0">
+        {children}
+      </main>
     </div>
   );
 }

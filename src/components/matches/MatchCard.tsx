@@ -1,4 +1,4 @@
-import { Calendar, Zap, Lock } from 'lucide-react';
+import { Calendar, Lock } from 'lucide-react';
 import type { Match, Bet, BetPrediction, Sport, User } from '../../types';
 
 interface MatchCardProps {
@@ -19,8 +19,8 @@ function getStatusLabel(status: Match['status']): string {
 }
 
 function getStatusClasses(status: Match['status']): string {
-  if (status === 'live') return 'bg-office-red text-white animate-pulse';
-  if (status === 'finished') return 'bg-office-brown/20 text-office-brown/60';
+  if (status === 'live') return 'bg-office-red text-white';
+  if (status === 'finished') return 'bg-office-brown-light/20 text-office-brown-light/60';
   return 'bg-office-navy/10 text-office-navy';
 }
 
@@ -99,8 +99,9 @@ export default function MatchCard({ match, officeBets = [], officeMembers = [], 
   ];
 
   return (
-    <div className={`card overflow-hidden transition-shadow hover:shadow-lg ${
-      match.status === 'live' ? 'ring-2 ring-office-red/30' : ''
+    <div className={`overflow-hidden transition-shadow hover:shadow-lg animate-slide-up ${
+      match.status === 'live' ? 'card-accent-red ring-1 ring-office-red/20' :
+      match.status === 'finished' ? 'card opacity-90' : 'card'
     }`}>
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-2.5 bg-office-paper/50 border-b border-office-paper-dark/40">
@@ -112,7 +113,7 @@ export default function MatchCard({ match, officeBets = [], officeMembers = [], 
           )}
         </div>
         <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wide ${getStatusClasses(match.status)}`}>
-          {match.status === 'live' && <Zap className="w-3 h-3 inline mr-0.5 -mt-0.5" />}
+          {match.status === 'live' && <span className="live-dot mr-1 inline-block" />}
           {getStatusLabel(match.status)}
         </span>
       </div>
@@ -143,7 +144,7 @@ export default function MatchCard({ match, officeBets = [], officeMembers = [], 
             {match.status === 'upcoming' ? (
               <span className="text-2xl font-bold text-office-brown/20">VS</span>
             ) : (
-              <div className={`text-2xl font-bold ${match.status === 'live' ? 'text-office-red' : 'text-office-navy'}`}>
+              <div className={`text-2xl font-mono font-bold ${match.status === 'live' ? 'text-office-red' : 'text-office-navy'}`}>
                 {match.homeScore} - {match.awayScore}
               </div>
             )}
@@ -208,7 +209,7 @@ export default function MatchCard({ match, officeBets = [], officeMembers = [], 
                   )}
 
                   {/* Cote */}
-                  <span className={`text-sm font-bold flex-shrink-0 ${
+                  <span className={`text-sm font-mono font-bold flex-shrink-0 ${
                     isUserChoice ? 'text-office-mustard' : 'text-office-navy/70'
                   }`}>
                     x{odds.toFixed(2)}
